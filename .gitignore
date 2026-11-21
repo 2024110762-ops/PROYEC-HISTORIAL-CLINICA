@@ -1,0 +1,15 @@
+# Entornos y secretos
+.env
+*.key
+*_dev_key
+Backend/env/
+Frontend/node_modules/
+
+# Base de datos y archivos de pacientes
+*.sqlite3
+Backend/media/*
+!Backend/media/.gitkeep
+
+# Python
+**/__pycache__/
+*.py[cod]
