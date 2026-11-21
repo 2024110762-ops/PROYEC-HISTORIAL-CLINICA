@@ -1,0 +1,170 @@
+<div class="hce-contenedor">
+  <p-toast />
+  <div class="hce-toolbar">
+    <div>
+      <h1>Resultados de laboratorio</h1>
+      <p>Consulta de pruebas locales e integraciones externas.</p>
+    </div>
+    <div class="hce-acciones">
+      @if (puedeCrear) {
+        <p-button label="Nuevo resultado" icon="pi pi-plus" (onClick)="AbrirNuevo()" />
+      }
+      @if (puedeSincronizar) {
+        <p-button
+          label="Sincronizar"
+          icon="pi pi-refresh"
+          [loading]="sincronizando()"
+          (onClick)="Sincronizar()"
+        />
+      }
+    </div>
+  </div>
+
+  <div class="hce-tarjeta">
+    <div class="hce-toolbar">
+      <input
+        pInputText
+        class="hce-campo-small"
+        type="search"
+        placeholder="Filtrar por prueba o laboratorio"
+        [value]="filtroTexto()"
+        (input)="filtroTexto.set($any($event.target).value)"
+      />
+      <p-select
+        class="hce-campo-small"
+        [ngModel]="filtroEstado()"
+        (ngModelChange)="filtroEstado.set($event)"
+        [options]="['PENDIENTE', 'DISPONIBLE', 'VALIDADO']"
+        placeholder="Estado"
+      />
+    </div>
+
+    <p-table class="hce-tabla" [value]="resultadosFiltrados()" [paginator]="true" [rows]="10">
+      <ng-template #header>
+        <tr>
+          <th>Prueba</th>
+          <th>Laboratorio</th>
+          <th>Fecha resultado</th>
+          <th>Valores</th>
+          <th>Estado</th>
+          <th>Fuente</th>
+          <th>Acción</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-resultado>
+        <tr>
+          <td>{{ resultado.tipo_prueba }}</td>
+          <td>{{ resultado.laboratorio }}</td>
+          <td>{{ resultado.fecha_resultado | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ resultado.valores }} {{ resultado.unidad }}</td>
+          <td><p-tag [value]="resultado.estado" /></td>
+          <td>{{ resultado.fuente }}</td>
+          <td><p-button icon="pi pi-eye" rounded text (onClick)="Ver(resultado)" /></td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7">No hay resultados disponibles.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="formularioVisible()"
+  (visibleChange)="formularioVisible.set($event)"
+  header="Nuevo resultado de laboratorio"
+  [modal]="true"
+  [style]="{ width: '720px' }"
+>
+  <form [formGroup]="formulario" (ngSubmit)="GuardarResultado()" class="hce-formulario">
+    <div class="hce-campo">
+      <label for="resultado-paciente">Paciente</label>
+      <select id="resultado-paciente" pInputText formControlName="paciente">
+        <option value="">Seleccione</option>
+        @for (paciente of pacientes(); track paciente.id) {
+          <option [value]="paciente.id">
+            {{ paciente.codigo_historia }} - {{ paciente.nombres }} {{ paciente.apellidos }}
+          </option>
+        }
+      </select>
+    </div>
+    <div class="hce-campo">
+      <label for="resultado-tipo">Tipo de prueba</label>
+      <input id="resultado-tipo" pInputText formControlName="tipo_prueba" />
+    </div>
+    <div class="hce-campo">
+      <label for="resultado-laboratorio">Laboratorio</label>
+      <input id="resultado-laboratorio" pInputText formControlName="laboratorio" />
+    </div>
+    <div class="hce-campo">
+      <label for="resultado-codigo">Código externo</label>
+      <input id="resultado-codigo" pInputText formControlName="codigo_externo" />
+    </div>
+    <div class="hce-campo">
+      <label for="resultado-estado">Estado</label>
+      <select id="resultado-estado" pInputText formControlName="estado">
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="DISPONIBLE">Disponible</option>
+        <option value="VALIDADO">Validado</option>
+      </select>
+    </div>
+    <div class="hce-campo">
+      <label for="resultado-fecha-toma">Fecha de toma</label>
+      <input id="resultado-fecha-toma" type="datetime-local" pInputText formControlName="fecha_toma" />
+    </div>
+    <div class="hce-campo">
+      <label for="resultado-fecha">Fecha del resultado</label>
+      <input id="resultado-fecha" type="datetime-local" pInputText formControlName="fecha_resultado" />
+    </div>
+    <div class="hce-campo">
+      <label for="resultado-valores">Valores</label>
+      <input id="resultado-valores" pInputText formControlName="valores" />
+    </div>
+    <div class="hce-campo">
+      <label for="resultado-unidad">Unidad</label>
+      <input id="resultado-unidad" pInputText formControlName="unidad" />
+    </div>
+    <div class="hce-campo">
+      <label for="resultado-interpretacion">Interpretación</label>
+      <textarea id="resultado-interpretacion" pInputText rows="3" formControlName="interpretacion"></textarea>
+    </div>
+    <div class="hce-toolbar" style="grid-column: 1 / -1">
+      <p-button type="button" label="Cancelar" severity="secondary" (onClick)="formularioVisible.set(false)" />
+      <p-button type="submit" label="Guardar" icon="pi pi-check" />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog
+  [visible]="visorVisible()"
+  (visibleChange)="visorVisible.set($event)"
+  header="Detalle del resultado"
+  [modal]="true"
+  [style]="{ width: '760px' }"
+>
+  @if (resultadoSeleccionado(); as resultado) {
+    <div class="hce-formulario">
+      <div class="hce-campo">
+        <label>Tipo de prueba</label>
+        <input pInputText [value]="resultado.tipo_prueba" readonly />
+      </div>
+      <div class="hce-campo">
+        <label>Valores</label>
+        <input pInputText [value]="resultado.valores + ' ' + resultado.unidad" readonly />
+      </div>
+      <div class="hce-campo">
+        <label>Interpretación</label>
+        <textarea pInputText rows="3" [value]="resultado.interpretacion" readonly></textarea>
+      </div>
+    </div>
+    @if (urlArchivo()) {
+      <p style="margin-top: 1rem">
+        <a [href]="urlArchivo()" target="_blank" rel="noopener">Abrir archivo adjunto</a>
+      </p>
+    } @else {
+      <p>No existe un archivo adjunto para este resultado.</p>
+    }
+  }
+</p-dialog>

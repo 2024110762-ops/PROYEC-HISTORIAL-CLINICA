@@ -1,0 +1,91 @@
+<div class="hce-contenedor">
+  <p-toast />
+  <div class="hce-toolbar">
+    <div>
+      <h1>Auditoría de accesos</h1>
+      <p>Consulta solo lectura. Cada exportación queda registrada.</p>
+    </div>
+    <p-button label="Exportar CSV" icon="pi pi-download" (onClick)="ExportarCSV()" />
+  </div>
+
+  <div class="hce-tarjeta">
+    <div class="hce-formulario">
+      <div class="hce-campo">
+        <label>Paciente (código)</label>
+        <input
+          pInputText
+          [ngModel]="filtros().paciente"
+          (ngModelChange)="filtros.update((valor) => ({ ...valor, paciente: $event }))"
+        />
+      </div>
+      <div class="hce-campo">
+        <label>Usuario</label>
+        <input
+          pInputText
+          [ngModel]="filtros().usuario"
+          (ngModelChange)="filtros.update((valor) => ({ ...valor, usuario: $event }))"
+        />
+      </div>
+      <div class="hce-campo">
+        <label>Acción</label>
+        <input
+          pInputText
+          [ngModel]="filtros().accion"
+          (ngModelChange)="filtros.update((valor) => ({ ...valor, accion: $event }))"
+        />
+      </div>
+      <div class="hce-campo">
+        <label>Desde</label>
+        <input
+          type="datetime-local"
+          pInputText
+          [ngModel]="filtros().desde"
+          (ngModelChange)="filtros.update((valor) => ({ ...valor, desde: $event }))"
+        />
+      </div>
+      <div class="hce-campo">
+        <label>Hasta</label>
+        <input
+          type="datetime-local"
+          pInputText
+          [ngModel]="filtros().hasta"
+          (ngModelChange)="filtros.update((valor) => ({ ...valor, hasta: $event }))"
+        />
+      </div>
+      <div class="hce-campo">
+        <label>&nbsp;</label>
+        <p-button label="Filtrar" icon="pi pi-search" (onClick)="GetAuditorias()" />
+      </div>
+    </div>
+
+    <p-table class="hce-tabla" [value]="registros()" [paginator]="true" [rows]="15">
+      <ng-template #header>
+        <tr>
+          <th>Fecha</th>
+          <th>Usuario</th>
+          <th>Paciente</th>
+          <th>Acción</th>
+          <th>Módulo</th>
+          <th>IP</th>
+          <th>Resultado</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-registro>
+        <tr>
+          <td>{{ registro.fecha_hora | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+          <td>{{ registro.usuario ?? 'Sistema' }}</td>
+          <td>{{ registro.paciente ?? '—' }}</td>
+          <td>{{ registro.accion }}</td>
+          <td>{{ registro.modulo }}</td>
+          <td>{{ registro.ip }}</td>
+          <td><p-tag [value]="registro.resultado" /></td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7">No hay eventos de auditoría.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

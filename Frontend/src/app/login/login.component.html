@@ -1,0 +1,35 @@
+<div class="hce-ingreso">
+  <form class="hce-tarjeta-ingreso" [formGroup]="formulario" (ngSubmit)="Ingresar()">
+    <h1>INGRESE</h1>
+    <p>Red de Clínicas · Historia Clínica Electrónica</p>
+
+    @if (mensajeError()) {
+      <p-message severity="error">{{ mensajeError() }}</p-message>
+    }
+
+    <div class="hce-campo">
+      <label for="usuario">Usuario</label>
+      <input id="usuario" type="text" pInputText formControlName="usuario" autocomplete="username" />
+    </div>
+
+    <div class="hce-campo">
+      <label for="contraseña">Contraseña</label>
+      <input
+        id="contraseña"
+        type="password"
+        pInputText
+        formControlName="contraseña"
+        autocomplete="current-password"
+      />
+    </div>
+
+    <p-button
+      type="submit"
+      label="Ingresar"
+      icon="pi pi-sign-in"
+      [loading]="cargando()"
+      [disabled]="formulario.invalid || cargando()"
+      styleClass="w-full mt-3"
+    />
+  </form>
+</div>

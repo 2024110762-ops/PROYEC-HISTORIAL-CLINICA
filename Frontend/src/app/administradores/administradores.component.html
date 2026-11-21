@@ -1,0 +1,51 @@
+<div class="hce-contenedor">
+  <p-toast />
+  <div class="hce-toolbar">
+    <div><h1>Administradores</h1><p>Gestión de cuentas administrativas.</p></div>
+    <p-button label="Nuevo administrador" icon="pi pi-plus" (onClick)="AbrirNuevo()" />
+  </div>
+
+  <div class="hce-tarjeta">
+    <p-table class="hce-tabla" [value]="administradores()" [paginator]="true" [rows]="10">
+      <ng-template #header>
+        <tr><th>Nombre</th><th>Apellidos</th><th>DNI</th><th>Usuario</th><th>Estado</th><th>Acciones</th></tr>
+      </ng-template>
+      <ng-template #body let-administrador>
+        <tr>
+          <td>{{ administrador.nombre }}</td>
+          <td>{{ administrador.apellidos }}</td>
+          <td>{{ administrador.dni }}</td>
+          <td>{{ administrador.usuario }}</td>
+          <td>{{ administrador.estado ? 'Activo' : 'Inactivo' }}</td>
+          <td>
+            <p-button icon="pi pi-pencil" rounded text (onClick)="AbrirEditar(administrador)" />
+            <p-button icon="pi pi-trash" rounded text severity="danger" (onClick)="EliminarAdministrador(administrador)" />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage><tr><td colspan="6">No hay administradores registrados.</td></tr></ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="dialogoVisible()"
+  (visibleChange)="dialogoVisible.set($event)"
+  [header]="administradorEditando() ? 'Editar administrador' : 'Nuevo administrador'"
+  [modal]="true"
+  [style]="{ width: '640px' }"
+>
+  <form [formGroup]="formulario" (ngSubmit)="GuardarAdministrador()" class="hce-formulario">
+    <div class="hce-campo"><label>DNI</label><input pInputText formControlName="dni" /></div>
+    <div class="hce-campo"><label>Nombre</label><input pInputText formControlName="nombre" /></div>
+    <div class="hce-campo"><label>Apellidos</label><input pInputText formControlName="apellidos" /></div>
+    <div class="hce-campo"><label>ID de usuario</label><input pInputText type="number" formControlName="usuario" /></div>
+    <div class="hce-campo"><label>Contraseña (se almacena hasheada)</label><input pInputText type="password" formControlName="contraseña" /></div>
+    <div class="hce-campo"><label>Estado</label><input type="checkbox" formControlName="estado" /></div>
+    <div class="hce-campo"><label>Imagen</label><input type="file" accept="image/*" (change)="SeleccionarImagen($event)" /></div>
+    <div class="hce-toolbar" style="grid-column: 1 / -1">
+      <p-button type="button" label="Cancelar" severity="secondary" (onClick)="dialogoVisible.set(false)" />
+      <p-button type="submit" label="Guardar" icon="pi pi-check" [disabled]="formulario.invalid" />
+    </div>
+  </form>
+</p-dialog>

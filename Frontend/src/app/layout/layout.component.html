@@ -1,0 +1,33 @@
+<div class="hce-layout">
+  <aside class="hce-sidebar">
+    <h2>RED DE CLÍNICAS · HCE</h2>
+    <nav>
+      @for (item of menus(); track item.id) {
+        <a [routerLink]="item.ruta" routerLinkActive="router-link-active">
+          <i [class]="item.icono"></i>
+          <span>{{ item.texto }}</span>
+        </a>
+      } @empty {
+        <span>No hay menús configurados.</span>
+      }
+    </nav>
+  </aside>
+
+  <div class="hce-principal">
+    <header class="hce-topbar">
+      <input type="search" pInputText placeholder="Búsqueda global" [value]="busquedaGlobal()" (input)="Buscar($event)" />
+      <span class="hce-espaciador"></span>
+      @if (perfil(); as datos) {
+        <span>{{ datos.nombre }} · {{ datos.rol }}</span>
+      }
+      <p-button icon="pi pi-sign-out" label="Cerrar sesión" (onClick)="CerrarSesion()" />
+    </header>
+
+    <main class="hce-contenido">
+      @if (mensaje()) {
+        <p-message severity="warn">{{ mensaje() }}</p-message>
+      }
+      <router-outlet />
+    </main>
+  </div>
+</div>

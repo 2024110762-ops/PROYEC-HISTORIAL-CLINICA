@@ -1,0 +1,119 @@
+<div class="hce-contenedor">
+  <p-toast />
+  <div class="hce-toolbar">
+    <div>
+      <h1>Pacientes</h1>
+      <p>Registro y consulta de historias clínicas.</p>
+    </div>
+    <div class="hce-acciones">
+      <p-button label="Actualizar" icon="pi pi-refresh" severity="secondary" [outlined]="true" (onClick)="Actualizar()" />
+      <p-button label="Nuevo paciente" icon="pi pi-plus" (onClick)="AbrirNuevo()" />
+    </div>
+  </div>
+
+  <div class="hce-tarjeta">
+    <p class="hce-contador">
+      {{ pacientesFiltrados().length }} paciente(s) registrado(s) · Actualizado:
+      {{ ultimaActualizacion() ? (ultimaActualizacion() | date: 'HH:mm:ss') : '—' }}
+    </p>
+    <input
+      pInputText
+      class="hce-campo-small"
+      type="search"
+      placeholder="Buscar por código, nombre, DNI, teléfono o correo"
+      [value]="busqueda()"
+      (input)="busqueda.set($any($event.target).value)"
+    />
+
+    <p-table #tabla class="hce-tabla" [value]="pacientesFiltrados()" [paginator]="true" [rows]="5" [pageLinks]="5">
+      <ng-template #header>
+        <tr>
+          <th>Código historia</th>
+          <th>Nombres</th>
+          <th>Apellidos</th>
+          <th>DNI</th>
+          <th>Teléfono</th>
+          <th>Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-paciente>
+        <tr>
+          <td><p-tag [value]="paciente.codigo_historia" /></td>
+          <td>{{ paciente.nombres }}</td>
+          <td>{{ paciente.apellidos }}</td>
+          <td>{{ paciente.dni }}</td>
+          <td>{{ paciente.telefono }}</td>
+          <td>
+            <p-button icon="pi pi-pencil" rounded text (onClick)="AbrirEditar(paciente)" />
+            <p-button icon="pi pi-trash" rounded text severity="danger" (onClick)="EliminarPaciente(paciente)" />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="6">No se encontraron pacientes.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="dialogoVisible()"
+  (visibleChange)="dialogoVisible.set($event)"
+  [header]="pacienteEditando() ? 'Editar paciente' : 'Nuevo paciente'"
+  [modal]="true"
+  [style]="{ width: '720px' }"
+>
+  <form [formGroup]="formulario" (ngSubmit)="GuardarPaciente()" class="hce-formulario">
+    <div class="hce-campo">
+      <label for="codigo_historia">Código de historia</label>
+      <input id="codigo_historia" pInputText formControlName="codigo_historia" />
+    </div>
+    <div class="hce-campo">
+      <label for="nombres">Nombres</label>
+      <input id="nombres" pInputText formControlName="nombres" />
+    </div>
+    <div class="hce-campo">
+      <label for="apellidos">Apellidos</label>
+      <input id="apellidos" pInputText formControlName="apellidos" />
+    </div>
+    <div class="hce-campo">
+      <label for="dni">DNI</label>
+      <input id="dni" pInputText formControlName="dni" />
+    </div>
+    <div class="hce-campo">
+      <label for="fecha_nacimiento">Fecha de nacimiento</label>
+      <input id="fecha_nacimiento" type="date" pInputText formControlName="fecha_nacimiento" />
+    </div>
+    <div class="hce-campo">
+      <label for="sexo">Sexo</label>
+      <select id="sexo" pInputText formControlName="sexo">
+        <option value="">Seleccione</option>
+        <option value="M">Masculino</option>
+        <option value="F">Femenino</option>
+        <option value="O">Otro</option>
+      </select>
+    </div>
+    <div class="hce-campo">
+      <label for="telefono">Teléfono</label>
+      <input id="telefono" pInputText formControlName="telefono" />
+    </div>
+    <div class="hce-campo">
+      <label for="correo">Correo</label>
+      <input id="correo" pInputText formControlName="correo" />
+    </div>
+    <div class="hce-campo">
+      <label for="direccion">Dirección</label>
+      <input id="direccion" pInputText formControlName="direccion" />
+    </div>
+    <div class="hce-campo">
+      <label for="foto">Foto</label>
+      <input id="foto" type="file" accept="image/*" (change)="SeleccionarFoto($event)" />
+    </div>
+    <div class="hce-toolbar" style="grid-column: 1 / -1">
+      <p-button type="button" label="Cancelar" severity="secondary" (onClick)="dialogoVisible.set(false)" />
+      <p-button type="submit" label="Guardar" icon="pi pi-check" />
+    </div>
+  </form>
+</p-dialog>
