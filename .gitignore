@@ -4,6 +4,8 @@
 *_dev_key
 Backend/env/
 Frontend/node_modules/
+Frontend/.angular/
+Frontend/dist/
 
 # Base de datos y archivos de pacientes
 *.sqlite3
