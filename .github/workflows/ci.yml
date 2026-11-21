@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    name: Backend · Django REST Framework
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+    env:
+      DEBUG: 'False'
+      SECRET_KEY: 'clave-de-ci-no-produccion'
+      FERNET_KEY: 'Y2ktZmVybmV0LWtleS1zb2xvLXBydWViYXMtMzJiISE='
+      FIRMA_SALT: 'salt-de-ci'
+      ALLOWED_HOSTS: 'localhost,127.0.0.1,testserver'
+      CORS_ALLOWED_ORIGINS: 'http://localhost:4200'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Comprobar configuración
+        run: python manage.py check
+      - name: Migraciones
+        run: python manage.py migrate --noinput
+      - name: Pruebas unitarias
+        run: python manage.py test
+
+  frontend:
+    name: Frontend · Angular + PrimeNG
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Compilación
+        run: npm run build
+      - name: Pruebas unitarias
+        run: npm test
