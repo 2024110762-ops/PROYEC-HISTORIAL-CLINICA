@@ -2,33 +2,43 @@ import os
 from pathlib import Path
 
 from cryptography.fernet import Fernet
-from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / '.env')
+ARCHIVO_ENV = BASE_DIR / '.env'
+if ARCHIVO_ENV.exists():
+    load_dotenv(ARCHIVO_ENV)
 
 
-def _obtener_valor(variable, archivo=None, generador=None):
-    valor = os.getenv(variable, '').strip()
+def _obtener_clave(nombre_variable,nombre_archivo,generar):
+    """Lee una clave del entorno o la genera una vez para desarrollo local."""
+    valor = os.getenv(nombre_variable,'').strip()
     if valor:
         return valor
-    if archivo:
-        ruta = BASE_DIR / archivo
-        if ruta.exists():
-            contenido = ruta.read_text(encoding='utf-8').strip()
-            if contenido:
-                return contenido
-    return generador() if generador else ''
+    ruta = BASE_DIR / nombre_archivo
+    if not ruta.exists():
+        ruta.write_text(generar(),encoding='utf-8')
+    return ruta.read_text(encoding='utf-8').strip()
 
 
-SECRET_KEY = _obtener_valor('SECRET_KEY', '.secret_dev_key', get_random_secret_key)
-FERNET_KEY = _obtener_valor('FERNET_KEY', '.fernet_dev_key', lambda: Fernet.generate_key().decode())
-FIRMA_SALT = _obtener_valor('FIRMA_SALT', '.firma_salt_dev_key', get_random_secret_key)
-
-DEBUG = os.getenv('DEBUG', 'True').strip().lower() in ('1', 'true', 'yes', 'on')
-ALLOWED_HOSTS = [ elemento.strip() for elemento in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if elemento.strip() ]
-CORS_ALLOWED_ORIGINS = [ elemento.strip() for elemento in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:4200').split(',') if elemento.strip() ]
+SECRET_KEY = _obtener_clave(
+    'SECRET_KEY',
+    '.secret_dev_key',
+    lambda: 'django-insecure-local-' + os.urandom(32).hex(),
+)
+DEBUG = os.getenv('DEBUG','True').strip().lower() in ('1','true','yes','si')
+ALLOWED_HOSTS = [
+    elemento.strip()
+    for elemento in os.getenv('ALLOWED_HOSTS','localhost,127.0.0.1,testserver').split(',')
+    if elemento.strip()
+]
+CORS_ALLOWED_ORIGINS = [
+    elemento.strip()
+    for elemento in os.getenv('CORS_ALLOWED_ORIGINS','http://localhost:4200').split(',')
+    if elemento.strip()
+]
+FERNET_KEY = _obtener_clave('FERNET_KEY','.fernet_dev_key',lambda: Fernet.generate_key().decode())
+FIRMA_SALT = os.getenv('FIRMA_SALT','firma-local-hce')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -45,8 +55,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -55,7 +65,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'HCE.urls'
-WSGI_APPLICATION = 'HCE.wsgi.application'
 
 TEMPLATES = [
     {
@@ -72,15 +81,13 @@ TEMPLATES = [
     },
 ]
 
-_nombre_base_datos = os.getenv('DB_NAME', 'db.sqlite3').strip() or 'db.sqlite3'
-_ruta_base_datos = Path(_nombre_base_datos)
-if not _ruta_base_datos.is_absolute():
-    _ruta_base_datos = BASE_DIR / _ruta_base_datos
+WSGI_APPLICATION = 'HCE.wsgi.application'
+ASGI_APPLICATION = 'HCE.asgi.application'
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': str(_ruta_base_datos),
+        'NAME': BASE_DIR / os.getenv('DB_NAME','db.sqlite3'),
     }
 }
 
@@ -91,26 +98,71 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
-    'EXCEPTION_HANDLER': 'historia.auditoria.manejador_excepciones',
-}
-
 LANGUAGE_CODE = 'es'
 TIME_ZONE = 'America/Lima'
 USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-MEDIA_URL = '/media/'
+MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '1000/hour',
+    },
+    'EXCEPTION_HANDLER': 'historia.auditoria.manejador_excepciones',
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+}
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'hce-webhooks',
+    }
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'general': {
+            'format': '%(asctime)s %(levelname)s %(name)s: %(message)s',
+        },
+    },
+    'handlers': {
+        'consola': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'general',
+        },
+    },
+    'loggers': {
+        'django': {'handlers': ['consola'], 'level': 'INFO', 'propagate': False},
+        'django.request': {'handlers': ['consola'], 'level': 'WARNING', 'propagate': False},
+        'historia': {'handlers': ['consola'], 'level': 'WARNING', 'propagate': False},
+    },
+}

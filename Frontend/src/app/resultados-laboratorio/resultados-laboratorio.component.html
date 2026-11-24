@@ -59,7 +59,11 @@
           <td>{{ resultado.valores }} {{ resultado.unidad }}</td>
           <td><p-tag [value]="resultado.estado" /></td>
           <td>{{ resultado.fuente }}</td>
-          <td><p-button icon="pi pi-eye" rounded text (onClick)="Ver(resultado)" /></td>
+          <td>
+            <div class="hce-acciones-tabla">
+              <p-button icon="pi pi-eye" rounded text aria-label="Ver resultado" title="Ver resultado" (onClick)="Ver(resultado)" />
+            </div>
+          </td>
         </tr>
       </ng-template>
       <ng-template #emptymessage>

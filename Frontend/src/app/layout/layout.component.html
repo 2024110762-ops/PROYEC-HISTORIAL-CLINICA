@@ -4,7 +4,7 @@
     <nav>
       @for (item of menus(); track item.id) {
         <a [routerLink]="item.ruta" routerLinkActive="router-link-active">
-          <i [class]="item.icono"></i>
+          <i [class]="IconoMenu(item)"></i>
           <span>{{ item.texto }}</span>
         </a>
       } @empty {

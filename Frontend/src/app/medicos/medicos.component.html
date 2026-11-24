@@ -18,8 +18,10 @@
           <td>{{ NombreEspecialidad(medico.especialidad) }}</td>
           <td>{{ medico.cmp }}</td>
           <td>
-            <p-button icon="pi pi-pencil" rounded text (onClick)="AbrirEditar(medico)" />
-            <p-button icon="pi pi-trash" rounded text severity="danger" (onClick)="EliminarMedico(medico)" />
+            <div class="hce-acciones-tabla">
+              <p-button icon="pi pi-pencil" rounded text aria-label="Editar" title="Editar" (onClick)="AbrirEditar(medico)" />
+              <p-button icon="pi pi-trash" rounded text severity="danger" aria-label="Eliminar" title="Eliminar" (onClick)="EliminarMedico(medico)" />
+            </div>
           </td>
         </tr>
       </ng-template>

@@ -86,6 +86,28 @@ h3 {
   align-items: center;
 }
 
+.hce-acciones-tabla {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.hce-acciones-tabla .p-button {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.hce-acciones-tabla .p-button:not(.p-button-danger):hover {
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+.hce-acciones-tabla .p-button.p-button-danger:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 .hce-contador {
   margin: 0 0 0.75rem;
   color: #475569;

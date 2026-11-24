@@ -18,8 +18,10 @@
           <td>{{ administrador.usuario }}</td>
           <td>{{ administrador.estado ? 'Activo' : 'Inactivo' }}</td>
           <td>
-            <p-button icon="pi pi-pencil" rounded text (onClick)="AbrirEditar(administrador)" />
-            <p-button icon="pi pi-trash" rounded text severity="danger" (onClick)="EliminarAdministrador(administrador)" />
+            <div class="hce-acciones-tabla">
+              <p-button icon="pi pi-pencil" rounded text aria-label="Editar" title="Editar" (onClick)="AbrirEditar(administrador)" />
+              <p-button icon="pi pi-trash" rounded text severity="danger" aria-label="Eliminar" title="Eliminar" (onClick)="EliminarAdministrador(administrador)" />
+            </div>
           </td>
         </tr>
       </ng-template>

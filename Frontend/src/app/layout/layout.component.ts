@@ -4,6 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 
+import { Menu } from '../modelo';
 import { ApiService } from '../service/api.service';
 import { AuthService } from '../service/auth.service';
 import { MENU_BASE } from '../service/menu';
@@ -107,6 +108,13 @@ export class LayoutComponent implements OnInit {
       },
       error: () => this.api.menus.set(MENU_BASE),
     });
+  }
+
+  IconoMenu(item: Menu): string {
+    if (item.ruta.includes('resultados-laboratorio') || item.icono === 'pi pi-flask') {
+      return 'pi pi-clipboard';
+    }
+    return item.icono || 'pi pi-circle';
   }
 
   Buscar(evento: Event): void {

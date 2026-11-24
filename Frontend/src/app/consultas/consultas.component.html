@@ -28,15 +28,17 @@
           <td>{{ NombreEspecialidad(consulta.especialidad) }}</td>
           <td><p-tag [value]="consulta.estado" /></td>
           <td>
-            <p-button
-              *ngIf="PuedeFinalizar(consulta)"
-              label="Finalizar"
-              icon="pi pi-check"
-              size="small"
-              (onClick)="Finalizar(consulta)"
-            />
-            <p-button icon="pi pi-pencil" rounded text (onClick)="AbrirEditar(consulta)" />
-            <p-button icon="pi pi-trash" rounded text severity="danger" (onClick)="EliminarConsulta(consulta)" />
+            <div class="hce-acciones-tabla">
+              <p-button
+                *ngIf="PuedeFinalizar(consulta)"
+                label="Finalizar"
+                icon="pi pi-check"
+                size="small"
+                (onClick)="Finalizar(consulta)"
+              />
+              <p-button icon="pi pi-pencil" rounded text aria-label="Editar" title="Editar" (onClick)="AbrirEditar(consulta)" />
+              <p-button icon="pi pi-trash" rounded text severity="danger" aria-label="Eliminar" title="Eliminar" (onClick)="EliminarConsulta(consulta)" />
+            </div>
           </td>
         </tr>
       </ng-template>

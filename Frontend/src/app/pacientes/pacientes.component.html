@@ -44,8 +44,10 @@
           <td>{{ paciente.dni }}</td>
           <td>{{ paciente.telefono }}</td>
           <td>
-            <p-button icon="pi pi-pencil" rounded text (onClick)="AbrirEditar(paciente)" />
-            <p-button icon="pi pi-trash" rounded text severity="danger" (onClick)="EliminarPaciente(paciente)" />
+            <div class="hce-acciones-tabla">
+              <p-button icon="pi pi-pencil" rounded text [attr.aria-label]="'Editar ' + paciente.nombres" [attr.title]="'Editar'" (onClick)="AbrirEditar(paciente)" />
+              <p-button icon="pi pi-trash" rounded text severity="danger" [attr.aria-label]="'Eliminar ' + paciente.nombres" [attr.title]="'Eliminar'" (onClick)="EliminarPaciente(paciente)" />
+            </div>
           </td>
         </tr>
       </ng-template>

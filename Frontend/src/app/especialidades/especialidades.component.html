@@ -16,8 +16,10 @@
           <td>{{ especialidad.descripcion }}</td>
           <td>{{ especialidad.activo ? 'Sí' : 'No' }}</td>
           <td>
-            <p-button icon="pi pi-pencil" rounded text (onClick)="AbrirEditar(especialidad)" />
-            <p-button icon="pi pi-trash" rounded text severity="danger" (onClick)="EliminarEspecialidad(especialidad)" />
+            <div class="hce-acciones-tabla">
+              <p-button icon="pi pi-pencil" rounded text aria-label="Editar" title="Editar" (onClick)="AbrirEditar(especialidad)" />
+              <p-button icon="pi pi-trash" rounded text severity="danger" aria-label="Eliminar" title="Eliminar" (onClick)="EliminarEspecialidad(especialidad)" />
+            </div>
           </td>
         </tr>
       </ng-template>

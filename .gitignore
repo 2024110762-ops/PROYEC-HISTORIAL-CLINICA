@@ -1,17 +1,33 @@
-# Entornos y secretos
+# Entornos 
 .env
 *.key
-*_dev_key
+.fernet_dev_key
+.secret_dev_key
+env/
+venv/
 Backend/env/
-Frontend/node_modules/
-Frontend/.angular/
-Frontend/dist/
+Backend/venv/
 
-# Base de datos y archivos de pacientes
+# Python
+__pycache__/
+*.py[cod]
+*.so
+db.sqlite3
 *.sqlite3
 Backend/media/*
 !Backend/media/.gitkeep
+.pytest_cache/
+.coverage
 
-# Python
-**/__pycache__/
-*.py[cod]
+# Angular / Node
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log*
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
