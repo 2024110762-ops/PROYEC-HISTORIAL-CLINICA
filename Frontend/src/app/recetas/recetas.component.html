@@ -1,0 +1,152 @@
+<div class="hce-contenedor">
+  <p-toast />
+  <div class="hce-toolbar">
+    <div>
+      <h1>Recetas electrónicas</h1>
+      <p>Detalle de medicamentos, firma digital y código QR de verificación.</p>
+    </div>
+    @if (puedeEmitir) {
+      <p-button label="Nueva receta" icon="pi pi-plus" (onClick)="AbrirNueva()" />
+    }
+  </div>
+
+  <div class="hce-tarjeta">
+    <p-table class="hce-tabla" [value]="recetas()" [paginator]="true" [rows]="10">
+      <ng-template #header>
+        <tr>
+          <th>N°</th>
+          <th>Paciente</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Firma digital</th>
+          <th>Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-receta>
+        <tr>
+          <td>{{ receta.id }}</td>
+          <td>{{ NombrePaciente(receta.paciente) }}</td>
+          <td>{{ receta.fecha_emision | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td><p-tag [value]="receta.estado" /></td>
+          <td><code>{{ receta.firma_digital.slice(0, 16) }}…</code></td>
+          <td>
+            <p-button icon="pi pi-eye" rounded text (onClick)="VerReceta(receta)" />
+            @if (!soloLectura) {
+              <p-button icon="pi pi-trash" rounded text severity="danger" (onClick)="EliminarReceta(receta)" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="6">No hay recetas emitidas.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="dialogoVisible()"
+  (visibleChange)="dialogoVisible.set($event)"
+  [header]="recetaSeleccionada() ? 'Detalle de receta' : 'Nueva receta'"
+  [modal]="true"
+  [style]="{ width: '820px' }"
+>
+  @if (recetaSeleccionada(); as receta) {
+    <div class="hce-formulario">
+      <div class="hce-campo">
+        <label>Paciente</label>
+        <input pInputText [value]="NombrePaciente(cabecera().paciente)" readonly />
+      </div>
+      <div class="hce-campo">
+        <label>Diagnóstico</label>
+        <input pInputText [value]="cabecera().diagnostico" readonly />
+      </div>
+      <div class="hce-campo">
+        <label>Indicaciones</label>
+        <input pInputText [value]="cabecera().indicaciones" readonly />
+      </div>
+      <div class="hce-campo">
+        <label>Firma digital (SHA-256)</label>
+        <code>{{ receta.firma_digital }}</code>
+      </div>
+      <div class="hce-campo">
+        <label>Código QR</label>
+        @if (codigoQR()) {
+          <img class="hce-qr" [src]="codigoQR()" alt="QR de verificación de la receta" />
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="hce-formulario">
+      <div class="hce-campo">
+        <label>Consulta</label>
+        <p-select
+          [ngModel]="cabecera().consulta"
+          (ngModelChange)="cabecera.update((valor) => ({ ...valor, consulta: $event }))"
+          [options]="consultas()"
+          optionLabel="motivo"
+          optionValue="id"
+          placeholder="Seleccione consulta"
+        />
+      </div>
+      <div class="hce-campo">
+        <label>Paciente</label>
+        <p-select
+          [ngModel]="cabecera().paciente"
+          (ngModelChange)="cabecera.update((valor) => ({ ...valor, paciente: $event }))"
+          [options]="pacientes()"
+          optionLabel="codigo_historia"
+          optionValue="id"
+          placeholder="Seleccione paciente"
+        />
+      </div>
+      <div class="hce-campo">
+        <label>Diagnóstico</label>
+        <input
+          pInputText
+          [ngModel]="cabecera().diagnostico"
+          (ngModelChange)="cabecera.update((valor) => ({ ...valor, diagnostico: $event }))"
+        />
+      </div>
+      <div class="hce-campo">
+        <label>Indicaciones</label>
+        <input
+          pInputText
+          [ngModel]="cabecera().indicaciones"
+          (ngModelChange)="cabecera.update((valor) => ({ ...valor, indicaciones: $event }))"
+        />
+      </div>
+    </div>
+
+    <h3>Detalle de medicamentos</h3>
+    @for (detalle of detalles(); track $index) {
+      <div class="hce-formulario">
+        <div class="hce-campo">
+          <label>Medicamento</label>
+          <p-select
+            [ngModel]="detalle.medicamento"
+            (ngModelChange)="detalle.medicamento = $event"
+            [options]="medicamentos()"
+            optionLabel="nombre"
+            optionValue="id"
+          />
+        </div>
+        <div class="hce-campo"><label>Dosis</label><input pInputText [(ngModel)]="detalle.dosis" /></div>
+        <div class="hce-campo"><label>Frecuencia</label><input pInputText [(ngModel)]="detalle.frecuencia" /></div>
+        <div class="hce-campo"><label>Duración</label><input pInputText [(ngModel)]="detalle.duracion" /></div>
+        <div class="hce-campo"><label>Cantidad</label><input pInputText type="number" [(ngModel)]="detalle.cantidad" /></div>
+        <p-button icon="pi pi-trash" severity="danger" rounded text (onClick)="QuitarDetalle($index)" />
+      </div>
+    }
+    <p-button label="Agregar medicamento" icon="pi pi-plus" (onClick)="AgregarDetalle()" />
+  }
+
+  <div class="hce-toolbar">
+    <p-button label="Cerrar" severity="secondary" (onClick)="dialogoVisible.set(false)" />
+    @if (!recetaSeleccionada() && !soloLectura) {
+      <p-button label="Emitir receta" icon="pi pi-file" (onClick)="GuardarReceta()" />
+    }
+  </div>
+</p-dialog>

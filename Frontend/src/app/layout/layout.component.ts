@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -7,7 +7,7 @@ import { MessageModule } from 'primeng/message';
 import { Menu } from '../modelo';
 import { ApiService } from '../service/api.service';
 import { AuthService } from '../service/auth.service';
-import { MENU_BASE } from '../service/menu';
+import { MENU_BASE, ROLES_POR_RUTA } from '../service/menu';
 import { SharedService } from '../service/shared.service';
 
 @Component({
@@ -90,12 +90,19 @@ export class LayoutComponent implements OnInit {
   private readonly enrutador = inject(Router);
   private readonly ruta = inject(ActivatedRoute);
 
-  readonly menus = this.api.menus;
   readonly perfil = this.autenticacion.getPerfil();
+  readonly menus = computed(() => {
+    const rol = this.perfil()?.rol ?? '';
+    return this.api.menus().filter((item) => {
+      const permitidos = ROLES_POR_RUTA[item.ruta];
+      return !permitidos?.length || permitidos.includes(rol);
+    });
+  });
   readonly mensaje = signal(this.ruta.snapshot.queryParamMap.get('error') ?? '');
   readonly busquedaGlobal = signal(this.compartido.ObtenerBusqueda());
 
   ngOnInit(): void {
+    this.ruta.queryParamMap.subscribe((parametros) => this.mensaje.set(parametros.get('error') ?? ''));
     this.compartido.busqueda.subscribe((texto) => this.busquedaGlobal.set(texto));
     if (!this.perfil()) {
       this.autenticacion.CargarPerfil().subscribe({ next: () => undefined, error: () => undefined });

@@ -49,10 +49,10 @@ export class ConsultasComponent implements OnInit {
   readonly consultaEditando = signal<Consulta | null>(null);
 
   readonly formulario = this.constructorFormulario.nonNullable.group({
-    paciente: [0, Validators.required],
-    medico: [0, Validators.required],
-    especialidad: [0, Validators.required],
-    sede: [0, Validators.required],
+    paciente: [0, [Validators.required, Validators.min(1)]],
+    medico: [0, [Validators.required, Validators.min(1)]],
+    especialidad: [0, [Validators.required, Validators.min(1)]],
+    sede: [0, [Validators.required, Validators.min(1)]],
     fecha_hora: [new Date(), Validators.required],
     motivo: [''],
     diagnostico: [''],
@@ -146,8 +146,10 @@ export class ConsultasComponent implements OnInit {
 
   Finalizar(consulta: Consulta): void {
     this.api.PostFinalizarConsulta(consulta.id).subscribe({
-      next: (respuesta) =>
-        this.mensajeria.add({ severity: 'success', summary: 'Operación Exitosa', detail: respuesta.mensaje }),
+      next: (respuesta) => {
+        this.mensajeria.add({ severity: 'success', summary: 'Operación Exitosa', detail: respuesta.mensaje });
+        this.GetConsultas();
+      },
       error: (fallo: HttpErrorResponse) =>
         this.mensajeria.add({ severity: 'error', summary: 'Error', detail: DetalleErrorComun(fallo, 'finalizar la consulta') }),
     });

@@ -19,7 +19,7 @@
     @for (estudio of estudios(); track estudio.id) {
       <article class="hce-tarjeta">
         @if (estudio.imagen) {
-          <img [src]="apiUrl + '/' + estudio.imagen" [alt]="estudio.tipo_estudio" />
+          <img [src]="UrlArchivo(estudio.imagen)" [alt]="estudio.tipo_estudio" />
         } @else {
           <div
             style="

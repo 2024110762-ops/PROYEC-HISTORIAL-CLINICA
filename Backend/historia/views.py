@@ -22,6 +22,7 @@ from .models import (
     Consulta,
     DetalleReceta,
     EstadosConsulta,
+    EstadosReceta,
     Especialidad,
     EstudioImagen,
     Medico,
@@ -204,6 +205,19 @@ class RecetaElectronicaViewSet(RegistrarAuditoriaMixin, ControlAccesoMixin, view
                 raise PermissionDenied('La consulta no pertenece a tu especialidad.')
             serializer.validated_data['medico'] = medico
         super().perform_create(serializer)
+
+    @action(detail=True, methods=['post'], url_path='anular')
+    def anular(self, solicitud, pk=None):
+        receta = self.get_object()
+        if receta.estado == EstadosReceta.ANULADA:
+            return Response({'mensaje': 'No se realizaron cambios'})
+        receta.estado = EstadosReceta.ANULADA
+        receta.save(update_fields=['estado'])
+        registrar_evento(solicitud, receta.paciente, 'ANULAR', 'Recetas', 'Exito', f'Receta {receta.pk} anulada')
+        return Response({'mensaje': 'Operación Exitosa'})
+
+    def destroy(self, solicitud, *args, **kwargs):
+        return self.anular(solicitud, pk=kwargs['pk'])
 
 
 class DetalleRecetaViewSet(ControlAccesoMixin, viewsets.ModelViewSet):

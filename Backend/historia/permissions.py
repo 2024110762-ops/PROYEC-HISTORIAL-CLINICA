@@ -21,7 +21,7 @@ class PermisoPorRecurso(BasePermission):
 
 class EsAdministrador(BasePermission):
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and request.user.is_staff)
+        return obtener_rol(request.user) == 'ADMIN'
 
 
 class EsMedico(BasePermission):
@@ -91,6 +91,7 @@ class PuedeGestionarPacientes(PermisoPorRecurso):
     reglas = {
         'ADMIN': TODO,
         'RECEPCION': TODO,
+        'ADMINISTRATIVO': TODO,
         'MEDICO': {'list', 'retrieve', 'update', 'partial_update'},
         'ENFERMERIA': LECTURA,
         'LABORATORIO': LECTURA,
@@ -104,6 +105,7 @@ class PuedeGestionarConsultas(PermisoPorRecurso):
         'ADMIN': TODO,
         'MEDICO': TODO,
         'RECEPCION': {'list', 'retrieve', 'create'},
+        'ADMINISTRATIVO': {'list', 'retrieve', 'create'},
         'ENFERMERIA': LECTURA,
         'LABORATORIO': LECTURA,
         'IMAGEN': LECTURA,
@@ -115,6 +117,7 @@ class PuedeGestionarRecetas(PermisoPorRecurso):
     reglas = {
         'ADMIN': TODO,
         'MEDICO': TODO,
+        'ADMINISTRATIVO': LECTURA,
         'PACIENTE': LECTURA,
     }
 
@@ -123,17 +126,19 @@ class PuedeGestionarDetallesReceta(PermisoPorRecurso):
     reglas = {
         'ADMIN': TODO,
         'MEDICO': TODO,
+        'ADMINISTRATIVO': LECTURA,
     }
 
 
 class PuedeGestionarMedicamentos(PermisoPorRecurso):
-    reglas = {'ADMIN': TODO, 'MEDICO': LECTURA}
+    reglas = {'ADMIN': TODO, 'MEDICO': LECTURA, 'ADMINISTRATIVO': LECTURA}
 
 
 class PuedeGestionarResultados(PermisoPorRecurso):
     reglas = {
         'ADMIN': TODO,
         'LABORATORIO': TODO,
+        'ADMINISTRATIVO': LECTURA,
         'MEDICO': LECTURA,
         'IMAGEN': LECTURA,
         'PACIENTE': LECTURA,
@@ -144,6 +149,7 @@ class PuedeGestionarEstudios(PermisoPorRecurso):
     reglas = {
         'ADMIN': TODO,
         'IMAGEN': TODO,
+        'ADMINISTRATIVO': LECTURA,
         'MEDICO': LECTURA,
         'LABORATORIO': LECTURA,
         'PACIENTE': LECTURA,
@@ -157,6 +163,7 @@ class PuedeGestionarAuditoria(PermisoPorRecurso):
 class PuedeGestionarMenu(PermisoPorRecurso):
     reglas = {
         'ADMIN': TODO,
+        'ADMINISTRATIVO': LECTURA,
         'MEDICO': LECTURA,
         'RECEPCION': LECTURA,
         'ENFERMERIA': LECTURA,
@@ -169,6 +176,7 @@ class PuedeGestionarMenu(PermisoPorRecurso):
 class PuedeGestionarMaestros(PermisoPorRecurso):
     reglas = {
         'ADMIN': TODO,
+        'ADMINISTRATIVO': LECTURA,
         'MEDICO': LECTURA,
         'RECEPCION': LECTURA,
         'ENFERMERIA': LECTURA,

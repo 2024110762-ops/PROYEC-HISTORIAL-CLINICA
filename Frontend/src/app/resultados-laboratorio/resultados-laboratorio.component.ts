@@ -11,9 +11,12 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 
-import { environment } from '../../environments/environment';
 import { Paciente, ResultadoLaboratorio } from '../modelo';
-import { ApiService, DetalleError as DetalleErrorComun } from '../service/api.service';
+import {
+  ApiService,
+  DetalleError as DetalleErrorComun,
+  UrlArchivo as UrlArchivoComun,
+} from '../service/api.service';
 import { AuthService } from '../service/auth.service';
 
 @Component({
@@ -66,7 +69,7 @@ export class ResultadosLaboratorioComponent implements OnInit {
   });
   readonly urlArchivo = computed(() => {
     const archivo = this.resultadoSeleccionado()?.archivo;
-    return archivo ? `${environment.apiUrl}/${archivo}` : '';
+    return UrlArchivoComun(archivo);
   });
 
   readonly resultadosFiltrados = computed(() => {

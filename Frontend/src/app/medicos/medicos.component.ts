@@ -44,9 +44,9 @@ export class MedicosComponent implements OnInit {
     codigo_medico: ['', Validators.required],
     nombres: ['', Validators.required],
     apellidos: ['', Validators.required],
-    especialidad: [0, Validators.required],
+    especialidad: [0, [Validators.required, Validators.min(1)]],
     cmp: ['', Validators.required],
-    cuenta: [0],
+    cuenta: [''],
   });
 
   ngOnInit(): void {
@@ -70,7 +70,7 @@ export class MedicosComponent implements OnInit {
       apellidos: '',
       especialidad: this.especialidades()[0]?.id ?? 0,
       cmp: '',
-      cuenta: 0,
+      cuenta: '',
     });
     this.imagen = null;
     this.dialogoVisible.set(true);
@@ -78,7 +78,14 @@ export class MedicosComponent implements OnInit {
 
   AbrirEditar(medico: Medico): void {
     this.medicoEditando.set(medico);
-    this.formulario.patchValue({ ...medico, cuenta: medico.cuenta ?? 0 });
+    this.formulario.patchValue({
+      codigo_medico: medico.codigo_medico,
+      nombres: medico.nombres,
+      apellidos: medico.apellidos,
+      especialidad: medico.especialidad,
+      cmp: medico.cmp,
+      cuenta: medico.cuenta != null ? String(medico.cuenta) : '',
+    });
     this.imagen = null;
     this.dialogoVisible.set(true);
   }
@@ -93,7 +100,11 @@ export class MedicosComponent implements OnInit {
       return;
     }
     const datos = new FormData();
-    Object.entries(this.formulario.getRawValue()).forEach(([clave, valor]) => datos.append(clave, String(valor ?? '')));
+    Object.entries(this.formulario.getRawValue()).forEach(([clave, valor]) => {
+      if (clave === 'cuenta' || (valor !== '' && valor !== null && valor !== undefined)) {
+        datos.append(clave, valor === '' ? '' : String(valor));
+      }
+    });
     if (this.imagen) {
       datos.append('imagen', this.imagen);
     }

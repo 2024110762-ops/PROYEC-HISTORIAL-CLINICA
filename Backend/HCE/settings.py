@@ -1,7 +1,10 @@
+import hashlib
 import os
+import secrets
 from pathlib import Path
 
 from cryptography.fernet import Fernet
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,12 +24,12 @@ def _obtener_clave(nombre_variable,nombre_archivo,generar):
     return ruta.read_text(encoding='utf-8').strip()
 
 
+DEBUG = os.getenv('DEBUG','False').strip().lower() in ('1','true','yes','si')
 SECRET_KEY = _obtener_clave(
     'SECRET_KEY',
     '.secret_dev_key',
-    lambda: 'django-insecure-local-' + os.urandom(32).hex(),
+    lambda: secrets.token_urlsafe(64),
 )
-DEBUG = os.getenv('DEBUG','True').strip().lower() in ('1','true','yes','si')
 ALLOWED_HOSTS = [
     elemento.strip()
     for elemento in os.getenv('ALLOWED_HOSTS','localhost,127.0.0.1,testserver').split(',')
@@ -34,11 +37,18 @@ ALLOWED_HOSTS = [
 ]
 CORS_ALLOWED_ORIGINS = [
     elemento.strip()
-    for elemento in os.getenv('CORS_ALLOWED_ORIGINS','http://localhost:4200').split(',')
+    for elemento in os.getenv(
+        'CORS_ALLOWED_ORIGINS','http://localhost:4200,http://127.0.0.1:4200'
+    ).split(',')
     if elemento.strip()
 ]
 FERNET_KEY = _obtener_clave('FERNET_KEY','.fernet_dev_key',lambda: Fernet.generate_key().decode())
-FIRMA_SALT = os.getenv('FIRMA_SALT','firma-local-hce')
+FIRMA_SALT = os.getenv('FIRMA_SALT','').strip() or hashlib.sha256(FERNET_KEY.encode()).hexdigest()
+if not DEBUG:
+    if len(SECRET_KEY) < 50 or SECRET_KEY.startswith('django-insecure-'):
+        raise ImproperlyConfigured('Configura un SECRET_KEY seguro antes de desplegar en producción.')
+    if len(FERNET_KEY) < 44:
+        raise ImproperlyConfigured('Configura una FERNET_KEY válida antes de desplegar en producción.')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -106,6 +116,9 @@ USE_TZ = True
 STATIC_URL = 'static/'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+RENDERERES = ['rest_framework.renderers.JSONRenderer']
+if DEBUG:
+    RENDERERES.append('rest_framework.renderers.BrowsableAPIRenderer')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -125,10 +138,7 @@ REST_FRAMEWORK = {
         'user': '1000/hour',
     },
     'EXCEPTION_HANDLER': 'historia.auditoria.manejador_excepciones',
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
-    ],
+    'DEFAULT_RENDERER_CLASSES': RENDERERES,
 }
 
 SESSION_COOKIE_HTTPONLY = True
@@ -138,6 +148,9 @@ X_FRAME_OPTIONS = 'DENY'
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000' if not DEBUG else '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
 
 CACHES = {
     'default': {

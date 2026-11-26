@@ -42,6 +42,12 @@ class PacienteSerializer(serializers.ModelSerializer):
 class MedicoSerializer(serializers.ModelSerializer):
     especialidad_nombre = serializers.CharField(source='especialidad.nombre', read_only=True)
 
+    def to_internal_value(self, datos):
+        if 'cuenta' in datos and datos['cuenta'] == '':
+            datos = datos.copy()
+            datos['cuenta'] = None
+        return super().to_internal_value(datos)
+
     class Meta:
         model = Medico
         fields = '__all__'
@@ -189,4 +195,16 @@ class AdministradorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Administrador
         fields = '__all__'
-        extra_kwargs = {'contraseña': {'write_only': True}}
+        extra_kwargs = {
+            'contraseña': {'write_only': True, 'required': False, 'allow_blank': True},
+        }
+
+    def validate(self, datos_validados):
+        if self.instance is None and not datos_validados.get('contraseña'):
+            raise serializers.ValidationError({'contraseña': 'Este campo es obligatorio.'})
+        return datos_validados
+
+    def update(self, instancia, datos_validados):
+        if not datos_validados.get('contraseña'):
+            datos_validados.pop('contraseña', None)
+        return super().update(instancia, datos_validados)

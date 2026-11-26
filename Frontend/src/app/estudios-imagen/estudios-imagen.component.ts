@@ -7,9 +7,12 @@ import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 
-import { environment } from '../../environments/environment';
 import { EstudioImagen } from '../modelo';
-import { ApiService, DetalleError as DetalleErrorComun } from '../service/api.service';
+import {
+  ApiService,
+  DetalleError as DetalleErrorComun,
+  UrlArchivo as UrlArchivoComun,
+} from '../service/api.service';
 import { AuthService } from '../service/auth.service';
 
 @Component({
@@ -24,21 +27,18 @@ export class EstudiosImagenComponent implements OnInit {
   private readonly autenticacion = inject(AuthService);
   private readonly mensajeria = inject(MessageService);
 
-  readonly apiUrl = environment.apiUrl;
   readonly estudios = signal<EstudioImagen[]>([]);
   readonly estudioSeleccionado = signal<EstudioImagen | null>(null);
   readonly visorVisible = signal(false);
   readonly sincronizando = signal(false);
 
   readonly puedeSincronizar = this.autenticacion.tieneRol('ADMIN', 'IMAGEN');
-  readonly urlImagen = computed(() => {
-    const imagen = this.estudioSeleccionado()?.imagen;
-    return imagen ? `${environment.apiUrl}/${imagen}` : '';
-  });
-  readonly urlArchivo = computed(() => {
-    const archivo = this.estudioSeleccionado()?.archivo;
-    return archivo ? `${environment.apiUrl}/${archivo}` : '';
-  });
+  UrlArchivo(valor: string | null | undefined): string {
+    return UrlArchivoComun(valor);
+  }
+
+  readonly urlImagen = computed(() => UrlArchivoComun(this.estudioSeleccionado()?.imagen));
+  readonly urlArchivo = computed(() => UrlArchivoComun(this.estudioSeleccionado()?.archivo));
 
   ngOnInit(): void {
     this.GetEstudiosImagen();

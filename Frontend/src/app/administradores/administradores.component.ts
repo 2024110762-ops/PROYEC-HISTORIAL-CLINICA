@@ -33,7 +33,7 @@ export class AdministradoresComponent implements OnInit {
     dni: ['', Validators.required],
     nombre: ['', Validators.required],
     apellidos: ['', Validators.required],
-    usuario: [0, Validators.required],
+    usuario: ['', Validators.required],
     contraseña: [''],
     estado: [true],
   });
@@ -48,14 +48,21 @@ export class AdministradoresComponent implements OnInit {
 
   AbrirNuevo(): void {
     this.administradorEditando.set(null);
-    this.formulario.reset({ dni: '', nombre: '', apellidos: '', usuario: 0, contraseña: '', estado: true });
+    this.formulario.reset({ dni: '', nombre: '', apellidos: '', usuario: '', contraseña: '', estado: true });
     this.imagen = null;
     this.dialogoVisible.set(true);
   }
 
   AbrirEditar(administrador: Administrador): void {
     this.administradorEditando.set(administrador);
-    this.formulario.patchValue({ ...administrador, contraseña: '' });
+    this.formulario.patchValue({
+      dni: administrador.dni,
+      nombre: administrador.nombre,
+      apellidos: administrador.apellidos,
+      usuario: String(administrador.usuario),
+      contraseña: '',
+      estado: administrador.estado,
+    });
     this.imagen = null;
     this.dialogoVisible.set(true);
   }
@@ -69,12 +76,33 @@ export class AdministradoresComponent implements OnInit {
       this.formulario.markAllAsTouched();
       return;
     }
+    const valores = this.formulario.getRawValue();
+    const administrador = this.administradorEditando();
+    if (!Number.isInteger(Number(valores.usuario)) || Number(valores.usuario) < 1) {
+      this.mensajeria.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Debe indicar un ID de usuario válido.',
+      });
+      return;
+    }
+    if (!administrador && !valores.contraseña) {
+      this.mensajeria.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'La contraseña es obligatoria para un nuevo administrador.',
+      });
+      return;
+    }
     const datos = new FormData();
-    Object.entries(this.formulario.getRawValue()).forEach(([clave, valor]) => datos.append(clave, String(valor ?? '')));
+    Object.entries(valores).forEach(([clave, valor]) => {
+      if (valor !== '' && valor !== null && valor !== undefined) {
+        datos.append(clave, String(valor));
+      }
+    });
     if (this.imagen) {
       datos.append('imagen', this.imagen);
     }
-    const administrador = this.administradorEditando();
     const operacion = administrador
       ? this.api.PutAdministrador(administrador.id, datos)
       : this.api.PostAdministrador(datos);

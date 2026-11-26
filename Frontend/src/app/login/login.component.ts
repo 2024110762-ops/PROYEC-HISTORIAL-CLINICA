@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -6,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 
+import { DetalleError } from '../service/api.service';
 import { AuthService } from '../service/auth.service';
 
 @Component({
@@ -69,9 +71,11 @@ export class LoginComponent implements OnInit {
         const destino = this.ruta.snapshot.queryParamMap.get('returnUrl') || '/sistema';
         this.enrutador.navigateByUrl(destino);
       },
-      error: () => {
+      error: (fallo: HttpErrorResponse) => {
         this.cargando.set(false);
-        this.mensajeError.set('Credenciales inválidas. Intente nuevamente.');
+        this.mensajeError.set(
+          fallo.status === 401 ? 'Credenciales inválidas. Intente nuevamente.' : DetalleError(fallo, 'ingresar'),
+        );
       },
     });
   }

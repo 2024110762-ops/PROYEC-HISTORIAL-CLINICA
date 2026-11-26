@@ -12,6 +12,7 @@ from rest_framework.test import APIClient
 from .integraciones.clientes import IntegracionError
 from .integraciones.laboratorio import sincronizar_resultados
 from .models import (
+    Administrador,
     AuditoriaAcceso,
     Consulta,
     Especialidad,
@@ -69,6 +70,15 @@ class HistoriaClinicaTests(TestCase):
             rol=RolesClinica.LABORATORIO,
             sede=self.sede,
             cuenta=self.usuario_lab,
+        )
+        self.usuario_administrativo = User.objects.create_user('administrativo', password='ClaveSegura123!')
+        PersonalClinica.objects.create(
+            codigo_empleado='EMP-002',
+            nombres='Ana',
+            apellidos='Administrativo',
+            rol=RolesClinica.ADMINISTRATIVO,
+            sede=self.sede,
+            cuenta=self.usuario_administrativo,
         )
         self.consulta_cardio = self._crear_consulta(self.paciente, self.medico_cardio, self.cardiologia)
         self.consulta_derma = self._crear_consulta(self.paciente, self.medico_derma, self.dermatologia)
@@ -285,3 +295,81 @@ class HistoriaClinicaTests(TestCase):
             tipo_estudio='Radiografía de tórax',
         )
         self.assertEqual(EstudioImagen.objects.count(), 1)
+
+    def test_administrativo_tiene_acceso_a_historia_pero_no_a_auditoria(self):
+        self._autenticar('administrativo')
+        self.assertEqual(self.api.get('/api/pacientes/').status_code, 200)
+        self.assertEqual(self.api.get('/api/consultas/').status_code, 200)
+        self.assertEqual(self.api.get('/api/auditorias/').status_code, 403)
+
+    def test_anular_receta_conserva_el_registro(self):
+        receta = RecetaElectronica.objects.create(
+            consulta=self.consulta_cardio,
+            paciente=self.paciente,
+            medico=self.medico_cardio,
+            firma_digital='b' * 64,
+        )
+        self._autenticar('medico_cardio')
+        respuesta = self.api.post(f'/api/recetas/{receta.id}/anular/')
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        receta.refresh_from_db()
+        self.assertEqual(receta.estado, 'ANULADA')
+        self.assertEqual(self.api.delete(f'/api/recetas/{receta.id}/').status_code, 200)
+        self.assertTrue(RecetaElectronica.objects.filter(id=receta.id).exists())
+
+    def test_perfil_administrador_puede_acceder_a_administradores_y_menu(self):
+        usuario = User.objects.create_user('admin_perfil', password='ClaveSegura123!')
+        Administrador.objects.create(
+            dni='88888888',
+            nombre='Administrador',
+            apellidos='Perfil',
+            usuario=usuario,
+            contraseña='ClaveSegura123!',
+        )
+        self._autenticar('admin_perfil')
+        self.assertEqual(self.api.get('/api/administradores/').status_code, 200)
+        self.assertEqual(self.api.get('/api/menu/').status_code, 200)
+
+    def test_puede_limpiar_cuenta_de_medico(self):
+        self._autenticar('admin')
+        respuesta = self.api.put(
+            f'/api/medicos/{self.medico_cardio.id}/',
+            {
+                'codigo_medico': self.medico_cardio.codigo_medico,
+                'nombres': self.medico_cardio.nombres,
+                'apellidos': self.medico_cardio.apellidos,
+                'especialidad': self.cardiologia.id,
+                'cmp': 'CMP-NUEVO',
+                'cuenta': '',
+            },
+            format='json',
+        )
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        self.medico_cardio.refresh_from_db()
+        self.assertIsNone(self.medico_cardio.cuenta)
+
+    def test_actualizar_administrador_no_requiere_contraseña(self):
+        self._autenticar('admin')
+        usuario = User.objects.create_user('administrador2', password='ClaveSegura123!')
+        administrador = Administrador.objects.create(
+            dni='99999999',
+            nombre='Original',
+            apellidos='Apellido',
+            usuario=usuario,
+            contraseña='ClaveSegura123!',
+        )
+        respuesta = self.api.put(
+            f'/api/administradores/{administrador.id}/',
+            {
+                'dni': '99999999',
+                'nombre': 'Actualizado',
+                'apellidos': 'Apellido',
+                'usuario': usuario.id,
+                'estado': True,
+            },
+            format='json',
+        )
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        administrador.refresh_from_db()
+        self.assertEqual(administrador.nombre, 'Actualizado')
+        self.assertTrue(administrador.contraseña)

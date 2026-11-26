@@ -15,7 +15,7 @@ export const appRoutes: Routes = [
     loadComponent: () => import('./layout/layout.component').then((modulo) => modulo.LayoutComponent),
     canActivate: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'administrador' },
+      { path: '', pathMatch: 'full', redirectTo: 'pacientes' },
       {
         path: 'pacientes',
         title: 'Pacientes · HCE',
@@ -32,14 +32,14 @@ export const appRoutes: Routes = [
         path: 'recetas',
         title: 'Recetas · HCE',
         canActivate: [roleGuard],
-        data: { roles: ['ADMIN', 'MEDICO', 'PACIENTE'] },
+        data: { roles: ['ADMIN', 'MEDICO', 'PACIENTE', 'ADMINISTRATIVO'] },
         loadComponent: () => import('./recetas/recetas.component').then((modulo) => modulo.RecetasComponent),
       },
       {
         path: 'resultados-laboratorio',
         title: 'Resultados de laboratorio · HCE',
         canActivate: [roleGuard],
-        data: { roles: ['ADMIN', 'MEDICO', 'LABORATORIO', 'IMAGEN', 'PACIENTE'] },
+        data: { roles: ['ADMIN', 'MEDICO', 'LABORATORIO', 'IMAGEN', 'PACIENTE', 'ADMINISTRATIVO'] },
         loadComponent: () =>
           import('./resultados-laboratorio/resultados-laboratorio.component').then(
             (modulo) => modulo.ResultadosLaboratorioComponent,
@@ -49,7 +49,7 @@ export const appRoutes: Routes = [
         path: 'estudios-imagen',
         title: 'Estudios de imagen · HCE',
         canActivate: [roleGuard],
-        data: { roles: ['ADMIN', 'MEDICO', 'LABORATORIO', 'IMAGEN', 'PACIENTE'] },
+        data: { roles: ['ADMIN', 'MEDICO', 'LABORATORIO', 'IMAGEN', 'PACIENTE', 'ADMINISTRATIVO'] },
         loadComponent: () =>
           import('./estudios-imagen/estudios-imagen.component').then(
             (modulo) => modulo.EstudiosImagenComponent,
@@ -88,6 +88,8 @@ export const appRoutes: Routes = [
       {
         path: 'menu',
         title: 'Menús · HCE',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
         loadComponent: () => import('./menu/menu.component').then((modulo) => modulo.MenuComponent),
       },
     ],

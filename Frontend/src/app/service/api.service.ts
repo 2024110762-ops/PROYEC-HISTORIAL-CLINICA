@@ -39,6 +39,16 @@ export function DetalleError(fallo: HttpErrorResponse, accion = 'guardar'): stri
   return partes.join(' | ') || `No se pudo ${accion}.`;
 }
 
+export function UrlArchivo(valor: string | null | undefined): string {
+  if (!valor) {
+    return '';
+  }
+  if (/^https?:\/\//i.test(valor) || valor.startsWith('/')) {
+    return valor.startsWith('/media/') ? `${environment.apiUrl}${valor}` : valor;
+  }
+  return `${environment.apiUrl}/media/${valor.replace(/^\/+/, '')}`;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
@@ -127,6 +137,10 @@ export class ApiService {
 
   PutReceta(id: number, datos: Partial<RecetaElectronica>): Observable<RecetaElectronica> {
     return this.Put<RecetaElectronica, Partial<RecetaElectronica>>(`recetas/${id}/`, datos);
+  }
+
+  PostAnularReceta(id: number): Observable<{ mensaje: string }> {
+    return this.Post<{ mensaje: string }, Record<string, never>>(`recetas/${id}/anular/`, {});
   }
 
   DeleteReceta(id: number): Observable<void> {

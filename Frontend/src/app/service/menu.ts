@@ -12,3 +12,23 @@ export const MENU_BASE: Menu[] = [
   { id: 9, texto: 'Administradores', icono: 'pi pi-cog', ruta: '/sistema/administradores', orden: 9 },
   { id: 10, texto: 'Menús', icono: 'pi pi-list', ruta: '/sistema/menu', orden: 10 },
 ];
+
+export const ROLES_POR_RUTA: Record<string, string[]> = {
+  '/sistema/pacientes': [],
+  '/sistema/consultas': [],
+  '/sistema/recetas': ['ADMIN', 'MEDICO', 'PACIENTE', 'ADMINISTRATIVO'],
+  '/sistema/resultados-laboratorio': [
+    'ADMIN',
+    'MEDICO',
+    'LABORATORIO',
+    'IMAGEN',
+    'PACIENTE',
+    'ADMINISTRATIVO',
+  ],
+  '/sistema/estudios-imagen': ['ADMIN', 'MEDICO', 'LABORATORIO', 'IMAGEN', 'PACIENTE', 'ADMINISTRATIVO'],
+  '/sistema/auditoria': ['ADMIN'],
+  '/sistema/medicos': [],
+  '/sistema/especialidades': [],
+  '/sistema/administradores': ['ADMIN'],
+  '/sistema/menu': ['ADMIN'],
+};

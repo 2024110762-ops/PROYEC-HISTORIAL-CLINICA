@@ -8,7 +8,7 @@ import { appRoutes } from './app.routes';
 import { Paciente } from './modelo';
 import { PacientesComponent } from './pacientes/pacientes.component';
 import { ResultadosLaboratorioComponent } from './resultados-laboratorio/resultados-laboratorio.component';
-import { ApiService, DetalleError } from './service/api.service';
+import { ApiService, DetalleError, UrlArchivo } from './service/api.service';
 import { AuthService } from './service/auth.service';
 import { SharedService } from './service/shared.service';
 
@@ -17,6 +17,13 @@ describe('Configuración de la aplicación', () => {
     const rutas = appRoutes.map((ruta) => ruta.path);
     expect(rutas).toContain('login');
     expect(rutas).toContain('sistema');
+
+    const sistema = appRoutes.find((ruta) => ruta.path === 'sistema');
+    const raiz = sistema?.children?.find((ruta) => ruta.path === '');
+    expect(raiz?.redirectTo).toBe('pacientes');
+
+    const menu = sistema?.children?.find((ruta) => ruta.path === 'menu');
+    expect(menu?.data?.['roles']).toEqual(['ADMIN']);
   });
 
   it('protege el módulo de auditoría por rol', () => {
@@ -191,6 +198,20 @@ describe('Detalle de errores', () => {
 
     const sinConexion = new HttpErrorResponse({ status: 0 });
     expect(DetalleError(sinConexion)).toContain('No se pudo conectar');
+  });
+});
+
+describe('URL de archivos', () => {
+  it('agrega /media/ a una ruta relativa', () => {
+    expect(UrlArchivo('laboratorio/analisis.pdf')).toBe(
+      'http://127.0.0.1:8000/media/laboratorio/analisis.pdf',
+    );
+  });
+
+  it('respeta la URL absoluta devuelta por el backend', () => {
+    expect(UrlArchivo('http://127.0.0.1:8000/media/laboratorio/analisis.pdf')).toBe(
+      'http://127.0.0.1:8000/media/laboratorio/analisis.pdf',
+    );
   });
 });
 
