@@ -159,7 +159,18 @@ class AuditoriaAccesoSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuditoriaAcceso
         fields = '__all__'
-        read_only_fields = '__all__'
+        read_only_fields = (
+            'id',
+            'usuario',
+            'paciente',
+            'accion',
+            'modulo',
+            'fecha_hora',
+            'ip',
+            'user_agent',
+            'resultado',
+            'detalles',
+        )
 
 
 class IntegracionLogSerializer(serializers.ModelSerializer):
