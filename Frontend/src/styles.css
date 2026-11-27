@@ -9,7 +9,12 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
   background: var(--hce-fondo);
   color: #0f172a;
 }
@@ -31,6 +36,15 @@ h3 {
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
 }
 
+.hce-tarjeta-resultados {
+  margin-top: 1.5rem;
+}
+
+.hce-tarjeta-resultados h2 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
 .hce-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -42,6 +56,15 @@ h3 {
 
 .hce-tabla {
   width: 100%;
+}
+
+.hce-tabla-contenedor {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.hce-tabla-contenedor .hce-tabla {
+  min-width: 760px;
 }
 
 .hce-galeria {
@@ -112,4 +135,26 @@ h3 {
   margin: 0 0 0.75rem;
   color: #475569;
   font-size: 0.875rem;
+}
+
+.hce-select-panel {
+  overscroll-behavior: contain;
+}
+
+.hce-select-panel .p-select-list-container,
+.hce-select-panel .p-select-list {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
+
+.hce-select-panel .p-select-list-container::-webkit-scrollbar,
+.hce-select-panel .p-select-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.hce-select-panel .p-select-list-container::-webkit-scrollbar-thumb,
+.hce-select-panel .p-select-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #cbd5e1;
 }

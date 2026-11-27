@@ -228,6 +228,10 @@ export class ApiService {
     return this.Get<AuditoriaAcceso[]>('auditorias/', filtros);
   }
 
+  GetUsuariosAuditoria(): Observable<string[]> {
+    return this.Get<string[]>('auditorias/usuarios/');
+  }
+
   GetExportarAuditoria(filtros?: Filtros): Observable<Blob> {
     let parametros = new HttpParams();
     if (filtros) {

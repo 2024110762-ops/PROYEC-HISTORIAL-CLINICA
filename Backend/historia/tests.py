@@ -170,6 +170,15 @@ class HistoriaClinicaTests(TestCase):
         with self.assertRaises(ValueError):
             registro.save()
 
+    def test_usuarios_disponibles_en_auditoria(self):
+        self._autenticar('admin')
+        AuditoriaAcceso.objects.create(usuario=self.admin, accion='LISTAR', modulo='Pacientes')
+        AuditoriaAcceso.objects.create(usuario=self.admin, accion='CONSULTAR', modulo='Consultas')
+        AuditoriaAcceso.objects.create(accion='LOGIN', modulo='Autenticacion')
+        respuesta = self.api.get('/api/auditorias/usuarios/')
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.data, ['admin'])
+
     def test_receta_calcula_firma_y_detalles_anidados(self):
         medicamento = Medicamento.objects.create(nombre='Paracetamol')
         self._autenticar('medico_cardio')

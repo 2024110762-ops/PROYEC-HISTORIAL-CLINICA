@@ -291,6 +291,8 @@ class AuditoriaViewSet(ControlAccesoMixin, viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(usuario__username=parametros['usuario'])
         if parametros.get('accion'):
             queryset = queryset.filter(accion__icontains=parametros['accion'])
+        if parametros.get('modulo'):
+            queryset = queryset.filter(modulo__icontains=parametros['modulo'])
         desde = parse_datetime(parametros.get('desde', '')) if parametros.get('desde') else None
         hasta = parse_datetime(parametros.get('hasta', '')) if parametros.get('hasta') else None
         if desde:
@@ -298,6 +300,16 @@ class AuditoriaViewSet(ControlAccesoMixin, viewsets.ReadOnlyModelViewSet):
         if hasta:
             queryset = queryset.filter(fecha_hora__lte=hasta)
         return queryset
+
+    @action(detail=False, methods=['get'], url_path='usuarios')
+    def usuarios(self, solicitud):
+        nombres = (
+            AuditoriaAcceso.objects.exclude(usuario__isnull=True)
+            .values_list('usuario__username', flat=True)
+            .distinct()
+            .order_by('usuario__username')
+        )
+        return Response(list(nombres))
 
     @action(detail=False, methods=['get'], url_path='exportar')
     def exportar(self, solicitud):

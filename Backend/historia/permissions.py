@@ -157,7 +157,7 @@ class PuedeGestionarEstudios(PermisoPorRecurso):
 
 
 class PuedeGestionarAuditoria(PermisoPorRecurso):
-    reglas = {'ADMIN': LECTURA | {'exportar'}}
+    reglas = {'ADMIN': LECTURA | {'exportar', 'usuarios'}}
 
 
 class PuedeGestionarMenu(PermisoPorRecurso):
