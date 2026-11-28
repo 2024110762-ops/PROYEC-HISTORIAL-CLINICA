@@ -17,6 +17,11 @@ export const appRoutes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'pacientes' },
       {
+        path: 'perfil',
+        title: 'Mi perfil · HCE',
+        loadComponent: () => import('./perfil/perfil.component').then((modulo) => modulo.PerfilComponent),
+      },
+      {
         path: 'pacientes',
         title: 'Pacientes · HCE',
         loadComponent: () =>
@@ -60,7 +65,8 @@ export const appRoutes: Routes = [
         title: 'Auditoría · HCE',
         canActivate: [roleGuard],
         data: { roles: ['ADMIN'] },
-        loadComponent: () => import('./auditoria/auditoria.component').then((modulo) => modulo.AuditoriaComponent),
+        loadComponent: () =>
+          import('./auditoria/auditoria.component').then((modulo) => modulo.AuditoriaComponent),
       },
       {
         path: 'medicos',

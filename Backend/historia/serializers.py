@@ -1,3 +1,5 @@
+from django.contrib.auth import get_user_model
+from django.db import transaction
 from rest_framework import serializers
 
 from .models import (
@@ -17,7 +19,7 @@ from .models import (
     ResultadoLaboratorio,
     Sede,
 )
-from .services import generar_firma_receta
+from .services import generar_codigo_historia, generar_firma_receta
 
 
 class EspecialidadSerializer(serializers.ModelSerializer):
@@ -36,11 +38,17 @@ class PacienteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Paciente
         fields = '__all__'
-        read_only_fields = ('dni_hash',)
+        read_only_fields = ('dni_hash', 'codigo_historia')
+
+    def create(self, datos_validados):
+        datos_validados['codigo_historia'] = generar_codigo_historia()
+        return super().create(datos_validados)
 
 
 class MedicoSerializer(serializers.ModelSerializer):
     especialidad_nombre = serializers.CharField(source='especialidad.nombre', read_only=True)
+    username = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True, style={'input_type': 'password'})
 
     def to_internal_value(self, datos):
         if 'cuenta' in datos and datos['cuenta'] == '':
@@ -51,6 +59,45 @@ class MedicoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Medico
         fields = '__all__'
+
+    def validate(self, datos):
+        username = datos.get('username', '')
+        clave = datos.get('password', '')
+        if username and not clave:
+            raise serializers.ValidationError({'password': 'La contraseña es obligatoria al crear o cambiar de cuenta.'})
+        if username and Medico.objects.filter(cuenta__username=username).exclude(pk=getattr(self.instance, 'pk', None)).exists():
+            raise serializers.ValidationError({'username': 'Ese usuario ya está asociado a otro médico.'})
+        return datos
+
+    def _aplicar_usuario(self, username, clave):
+        usuario = get_user_model().objects.filter(username=username).first()
+        if usuario and (usuario.is_staff or usuario.is_superuser):
+            raise serializers.ValidationError({'username': 'Ese usuario ya es administrador.'})
+        if not usuario:
+            usuario = get_user_model()(username=username)
+        usuario.set_password(clave)
+        usuario.is_staff = False
+        usuario.is_superuser = False
+        usuario.save()
+        return usuario
+
+    def create(self, datos_validados):
+        username = datos_validados.pop('username', '')
+        clave = datos_validados.pop('password', '')
+        with transaction.atomic():
+            if username:
+                datos_validados['cuenta'] = self._aplicar_usuario(username, clave)
+            return super().create(datos_validados)
+
+    def update(self, instancia, datos_validados):
+        username = datos_validados.pop('username', '')
+        clave = datos_validados.pop('password', '')
+        with transaction.atomic():
+            if username:
+                datos_validados['cuenta'] = self._aplicar_usuario(username, clave)
+            elif clave and instancia.cuenta_id:
+                self._aplicar_usuario(instancia.cuenta.username, clave)
+            return super().update(instancia, datos_validados)
 
 
 class PersonalClinicaSerializer(serializers.ModelSerializer):

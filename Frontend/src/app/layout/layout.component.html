@@ -15,10 +15,16 @@
 
   <div class="hce-principal">
     <header class="hce-topbar">
-      <input type="search" pInputText placeholder="Búsqueda global" [value]="busquedaGlobal()" (input)="Buscar($event)" />
+      <input
+        type="search"
+        pInputText
+        placeholder="Búsqueda global"
+        [value]="busquedaGlobal()"
+        (input)="Buscar($event)"
+      />
       <span class="hce-espaciador"></span>
       @if (perfil(); as datos) {
-        <span>{{ datos.nombre }} · {{ datos.rol }}</span>
+        <a class="hce-perfil-enlace" routerLink="/sistema/perfil">{{ datos.nombre }} · {{ datos.rol }}</a>
       }
       <p-button icon="pi pi-sign-out" label="Cerrar sesión" (onClick)="CerrarSesion()" />
     </header>

@@ -1,0 +1,91 @@
+<div class="hce-contenedor">
+  <div class="hce-tarjeta">
+    @if (perfil(); as datos) {
+      <div class="hce-carnet-layout">
+        <div class="hce-carnet-columna">
+          <div class="hce-carnet-marco">
+            <header class="hce-carnet">
+              <div class="hce-carnet-encabezado">
+                <div class="hce-carnet-logo">HCE</div>
+                <div>
+                  <h2>Red de Clínicas · HCE</h2>
+                  <span>Carnet institucional</span>
+                </div>
+              </div>
+              <div class="hce-carnet-cuerpo">
+                <div class="hce-avatar">
+                  @if (urlImagen()) {
+                    <img [src]="urlImagen()" [alt]="datos.nombre" />
+                  } @else {
+                    <span>{{ iniciales() }}</span>
+                  }
+                </div>
+                <div class="hce-identidad">
+                  <h1>{{ datos.nombre }}</h1>
+                  <p>{{ datos.especialidad || EtiquetaRol(datos.rol) }}</p>
+                  <div class="hce-carnet-datos">
+                    <div>
+                      <strong>ID No</strong><span>{{ datos.codigo || datos.username || '—' }}</span>
+                    </div>
+                    <div>
+                      <strong>Registro</strong><span>{{ datos.username || '—' }}</span>
+                    </div>
+                    @if (esMedico()) {
+                      <div>
+                        <strong>CMP</strong><span>{{ datos.cmp || '—' }}</span>
+                      </div>
+                    }
+                    <div>
+                      <strong>Estado</strong><span>{{ datos.estado !== false ? 'Activo' : 'Inactivo' }}</span>
+                    </div>
+                    @if (datos.sede) {
+                      <div>
+                        <strong>Sede</strong><span>{{ datos.sede }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </header>
+          </div>
+          <div class="hce-acciones">
+            <input
+              #fotoInput
+              class="hce-foto-input"
+              type="file"
+              accept="image/*"
+              (change)="CambiarFoto($event)"
+            />
+            <p-button
+              label="Cambiar foto de perfil"
+              icon="pi pi-camera"
+              [disabled]="subiendoFoto()"
+              (onClick)="fotoInput.click()"
+            />
+          </div>
+        </div>
+        <div class="hce-qr-marco">
+          <section class="hce-qr">
+            <div class="hce-qr-encabezado">
+              <div class="hce-qr-logo">QR</div>
+              <div>
+                <h2>Verificación digital</h2>
+                <span>Código de identidad</span>
+              </div>
+            </div>
+            <div class="hce-qr-cuerpo">
+              @if (codigoQR()) {
+                <img [src]="codigoQR()" alt="Código QR de verificación del carnet" />
+              } @else {
+                <div class="hce-qr-cargando">Generando QR…</div>
+              }
+              <p>Escanea para verificar los datos del carnet</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    } @else {
+      <p>Cargando perfil…</p>
+    }
+  </div>
+</div>

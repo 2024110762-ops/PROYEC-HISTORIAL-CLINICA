@@ -40,6 +40,18 @@ def descifrar(valor):
         return valor
 
 
+def generar_codigo_historia():
+    from .models import Paciente
+
+    sufijos = []
+    codigos = Paciente.objects.filter(codigo_historia__startswith='HC-').values_list('codigo_historia', flat=True)
+    for codigo in codigos:
+        sufijo = codigo[3:]
+        if sufijo.isdigit():
+            sufijos.append(int(sufijo))
+    return f'HC-{(max(sufijos) if sufijos else 0) + 1:04d}'
+
+
 class CampoCifrado(models.TextField):
     """Campo de texto almacenado cifrado y desencriptado al leer de la base de datos."""
 
@@ -89,38 +101,107 @@ def obtener_rol(usuario):
     return 'USUARIO'
 
 
+def url_imagen(campo):
+    if not campo:
+        return ''
+    try:
+        return campo.url
+    except ValueError:
+        return ''
+
+
 def obtener_perfil(usuario):
     rol = obtener_rol(usuario)
+    nombre_completo = usuario.get_full_name() or usuario.get_username()
     respuesta = {
+        'id': None,
         'rol': rol,
+        'username': usuario.get_username(),
+        'nombre': nombre_completo,
+        'nombres': '',
+        'apellidos': '',
+        'correo': usuario.email,
+        'imagen': '',
         'especialidad': '',
-        'nombre': usuario.get_full_name() or usuario.get_username(),
         'sede': '',
         'codigo': '',
+        'telefono': '',
+        'direccion': '',
+        'fecha_nacimiento': None,
+        'sexo': '',
+        'cmp': '',
+        'estado': True,
+        'permisos': ['Editar mi perfil'],
     }
     if hasattr(usuario, 'perfil_paciente'):
         perfil = usuario.perfil_paciente
         respuesta.update(
+            id=perfil.pk,
             nombre=f'{perfil.nombres} {perfil.apellidos}'.strip(),
+            nombres=perfil.nombres,
+            apellidos=perfil.apellidos,
+            correo=perfil.correo or usuario.email,
+            imagen=url_imagen(perfil.foto),
             codigo=perfil.codigo_historia,
+            telefono=perfil.telefono,
+            direccion=perfil.direccion,
+            fecha_nacimiento=perfil.fecha_nacimiento.isoformat() if perfil.fecha_nacimiento else None,
+            sexo=perfil.sexo,
+            permisos=[
+                'Ver mis consultas',
+                'Ver mis recetas',
+                'Ver mis resultados de laboratorio',
+                'Ver mis estudios de imagen',
+                'Editar mi perfil',
+            ],
         )
     elif hasattr(usuario, 'perfil_medico'):
         perfil = usuario.perfil_medico
         respuesta.update(
+            id=perfil.pk,
             nombre=f'{perfil.nombres} {perfil.apellidos}'.strip(),
+            nombres=perfil.nombres,
+            apellidos=perfil.apellidos,
+            imagen=url_imagen(perfil.imagen),
             especialidad=perfil.especialidad.nombre,
             codigo=perfil.codigo_medico,
+            cmp=perfil.cmp,
+            permisos=[
+                'Ver pacientes de mi especialidad',
+                'Registrar consultas',
+                'Emitir recetas electrónicas',
+                'Ver resultados e imágenes',
+                'Editar mi perfil',
+            ],
         )
     elif hasattr(usuario, 'perfil_clinica'):
         perfil = usuario.perfil_clinica
         respuesta.update(
+            id=perfil.pk,
             nombre=f'{perfil.nombres} {perfil.apellidos}'.strip(),
+            nombres=perfil.nombres,
+            apellidos=perfil.apellidos,
             sede=perfil.sede.nombre,
             codigo=perfil.codigo_empleado,
+            permisos=['Ver agenda clínica', 'Registrar resultados según mi rol', 'Editar mi perfil'],
         )
     elif hasattr(usuario, 'perfil_administrador'):
         perfil = usuario.perfil_administrador
-        respuesta.update(nombre=f'{perfil.nombre} {perfil.apellidos}'.strip())
+        respuesta.update(
+            id=perfil.pk,
+            nombre=f'{perfil.nombre} {perfil.apellidos}'.strip(),
+            nombres=perfil.nombre,
+            apellidos=perfil.apellidos,
+            imagen=url_imagen(perfil.imagen),
+            estado=perfil.estado,
+            permisos=[
+                'Gestionar pacientes',
+                'Gestionar médicos y especialidades',
+                'Gestionar usuarios administradores',
+                'Consultar auditoría',
+                'Editar mi perfil',
+            ],
+        )
     return respuesta
 
 

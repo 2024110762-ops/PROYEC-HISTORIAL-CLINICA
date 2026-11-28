@@ -1,8 +1,9 @@
 import csv
 
 from django.contrib.auth import authenticate
+from django.db import transaction
 from django.http import HttpResponse
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_date, parse_datetime
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -369,6 +370,103 @@ class LogoutView(APIView):
 class PerfilView(APIView):
     def get(self, solicitud):
         return Response(obtener_perfil(solicitud.user))
+
+    def put(self, solicitud):
+        usuario = solicitud.user
+        datos = solicitud.data
+        nombres = str(datos.get('nombres', datos.get('nombre', '')) or '').strip()
+        apellidos = str(datos.get('apellidos', '') or '').strip()
+        correo = str(datos.get('correo', datos.get('email', '')) or '').strip()
+        imagen = solicitud.FILES.get('imagen')
+
+        perfil = None
+        campo_nombre = 'nombres'
+        campo_imagen = None
+        if hasattr(usuario, 'perfil_administrador'):
+            perfil = usuario.perfil_administrador
+            campo_nombre = 'nombre'
+            campo_imagen = 'imagen'
+        elif hasattr(usuario, 'perfil_medico'):
+            perfil = usuario.perfil_medico
+            campo_imagen = 'imagen'
+        elif hasattr(usuario, 'perfil_paciente'):
+            perfil = usuario.perfil_paciente
+            campo_imagen = 'foto'
+        elif hasattr(usuario, 'perfil_clinica'):
+            perfil = usuario.perfil_clinica
+
+        cmp_medico = None
+        if hasattr(usuario, 'perfil_medico') and 'cmp' in datos:
+            cmp_medico = str(datos.get('cmp') or '').strip()
+            if not cmp_medico or Medico.objects.filter(cmp=cmp_medico).exclude(pk=perfil.pk).exists():
+                return Response({'cmp': 'El CMP es obligatorio y debe ser único.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        telefono = direccion = sexo = None
+        fecha_nacimiento = None
+        if hasattr(usuario, 'perfil_paciente'):
+            if 'telefono' in datos:
+                telefono = str(datos.get('telefono') or '').strip()
+            if 'direccion' in datos:
+                direccion = str(datos.get('direccion') or '').strip()
+            if 'sexo' in datos:
+                sexo = str(datos.get('sexo') or '').strip().upper()
+                if sexo and sexo not in {'M', 'F', 'O'}:
+                    return Response({'sexo': 'Selecciona M, F u O.'}, status=status.HTTP_400_BAD_REQUEST)
+            if 'fecha_nacimiento' in datos:
+                valor_fecha = str(datos.get('fecha_nacimiento') or '').strip()
+                fecha_nacimiento = parse_date(valor_fecha) if valor_fecha else None
+                if valor_fecha and not fecha_nacimiento:
+                    return Response({'fecha_nacimiento': 'Fecha inválida.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            campos_perfil = []
+            if perfil is not None:
+                if nombres:
+                    setattr(perfil, campo_nombre, nombres)
+                    campos_perfil.append(campo_nombre)
+                if apellidos:
+                    perfil.apellidos = apellidos
+                    campos_perfil.append('apellidos')
+                if hasattr(usuario, 'perfil_medico') and cmp_medico is not None:
+                    perfil.cmp = cmp_medico
+                    campos_perfil.append('cmp')
+                if hasattr(usuario, 'perfil_paciente'):
+                    if 'telefono' in datos:
+                        perfil.telefono = telefono
+                        campos_perfil.append('telefono')
+                    if 'direccion' in datos:
+                        perfil.direccion = direccion
+                        campos_perfil.append('direccion')
+                    if 'sexo' in datos:
+                        perfil.sexo = sexo
+                        campos_perfil.append('sexo')
+                    if 'fecha_nacimiento' in datos:
+                        perfil.fecha_nacimiento = fecha_nacimiento
+                        campos_perfil.append('fecha_nacimiento')
+                    if correo:
+                        perfil.correo = correo
+                        campos_perfil.append('correo')
+                if campos_perfil:
+                    perfil.save(update_fields=list(dict.fromkeys(campos_perfil)))
+                if imagen and campo_imagen:
+                    setattr(perfil, campo_imagen, imagen)
+                    perfil.save(update_fields=[campo_imagen])
+
+            campos_usuario = []
+            if nombres:
+                usuario.first_name = nombres
+                campos_usuario.append('first_name')
+            if apellidos:
+                usuario.last_name = apellidos
+                campos_usuario.append('last_name')
+            if correo:
+                usuario.email = correo
+                campos_usuario.append('email')
+            if campos_usuario:
+                usuario.save(update_fields=list(dict.fromkeys(campos_usuario)))
+
+        registrar_evento(solicitud, None, 'ACTUALIZAR', 'Perfil', 'Exito', 'Perfil actualizado')
+        return Response(obtener_perfil(usuario))
 
 
 class HealthView(APIView):

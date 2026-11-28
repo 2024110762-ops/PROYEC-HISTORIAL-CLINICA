@@ -133,6 +133,47 @@ class HistoriaClinicaTests(TestCase):
         respuesta = self.api.get('/api/perfil/')
         self.assertEqual(respuesta.data['rol'], 'MEDICO')
         self.assertEqual(respuesta.data['especialidad'], 'Cardiología')
+        self.assertEqual(respuesta.data['nombres'], 'medico_cardio')
+        self.assertEqual(respuesta.data['apellidos'], 'Especialista')
+        self.assertEqual(respuesta.data['cmp'], 'CMP-001')
+        self.assertIn('Emitir recetas electrónicas', respuesta.data['permisos'])
+
+    def test_medico_puede_actualizar_su_perfil(self):
+        self._autenticar('medico_cardio')
+        respuesta = self.api.put(
+            '/api/perfil/',
+            {
+                'nombres': 'Ana María',
+                'apellidos': 'Ruiz Nuevo',
+                'correo': 'ana@hce.test',
+                'cmp': 'CMP-EDITADO',
+            },
+            format='json',
+        )
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        self.assertEqual(respuesta.data['nombre'], 'Ana María Ruiz Nuevo')
+        self.assertEqual(respuesta.data['correo'], 'ana@hce.test')
+        self.assertEqual(respuesta.data['cmp'], 'CMP-EDITADO')
+        self.medico_cardio.refresh_from_db()
+        self.assertEqual(self.medico_cardio.nombres, 'Ana María')
+        self.assertEqual(self.medico_cardio.apellidos, 'Ruiz Nuevo')
+        self.assertEqual(self.medico_cardio.cmp, 'CMP-EDITADO')
+        self.assertEqual(User.objects.get(username='medico_cardio').first_name, 'Ana María')
+
+    def test_admin_puede_actualizar_su_perfil(self):
+        self._autenticar('admin')
+        respuesta = self.api.put(
+            '/api/perfil/',
+            {'nombres': 'Root', 'apellidos': 'Admin', 'correo': 'root@hce.test'},
+            format='json',
+        )
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        self.assertEqual(respuesta.data['nombre'], 'Root Admin')
+        self.assertEqual(respuesta.data['correo'], 'root@hce.test')
+        usuario = User.objects.get(username='admin')
+        self.assertEqual(usuario.first_name, 'Root')
+        self.assertEqual(usuario.last_name, 'Admin')
+        self.assertEqual(usuario.email, 'root@hce.test')
 
     def test_medico_no_ve_consultas_de_otra_especialidad(self):
         self._autenticar('medico_cardio')
@@ -178,6 +219,16 @@ class HistoriaClinicaTests(TestCase):
         respuesta = self.api.get('/api/auditorias/usuarios/')
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual(respuesta.data, ['admin'])
+
+    def test_codigo_historia_se_genera_automaticamente(self):
+        self._autenticar('admin')
+        respuesta = self.api.post(
+            '/api/pacientes/',
+            {'nombres': 'Nuevo', 'apellidos': 'Paciente', 'dni': '11223344'},
+            format='json',
+        )
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        self.assertEqual(respuesta.data['codigo_historia'], 'HC-0003')
 
     def test_receta_calcula_firma_y_detalles_anidados(self):
         medicamento = Medicamento.objects.create(nombre='Paracetamol')
@@ -356,6 +407,30 @@ class HistoriaClinicaTests(TestCase):
         self.assertEqual(respuesta.status_code, 200, respuesta.data)
         self.medico_cardio.refresh_from_db()
         self.assertIsNone(self.medico_cardio.cuenta)
+
+    def test_admin_puede_crear_medico_con_usuario_y_contraseña(self):
+        self._autenticar('admin')
+        respuesta = self.api.post(
+            '/api/medicos/',
+            {
+                'codigo_medico': 'MED-NUEVO',
+                'nombres': 'Nuevo',
+                'apellidos': 'Medico',
+                'especialidad': self.cardiologia.id,
+                'cmp': 'CMP-NUEVO-2',
+                'username': 'medico_nuevo',
+                'password': 'ClaveSegura123!',
+            },
+            format='json',
+        )
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        medico = Medico.objects.get(codigo_medico='MED-NUEVO')
+        self.assertIsNotNone(medico.cuenta_id)
+        self.assertFalse(medico.cuenta.is_staff)
+        self.assertTrue(medico.cuenta.check_password('ClaveSegura123!'))
+        perfil = self._autenticar('medico_nuevo')
+        self.assertEqual(perfil['rol'], 'MEDICO')
+        self.assertEqual(perfil['especialidad'], 'Cardiología')
 
     def test_actualizar_administrador_no_requiere_contraseña(self):
         self._autenticar('admin')

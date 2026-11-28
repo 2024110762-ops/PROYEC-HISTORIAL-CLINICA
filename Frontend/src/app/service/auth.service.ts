@@ -34,6 +34,12 @@ export class AuthService {
       .pipe(tap((perfil) => this.perfil.set(perfil)));
   }
 
+  ActualizarPerfil(datos: FormData): Observable<Perfil> {
+    return this.http
+      .put<Perfil>(`${environment.apiUrl}/api/perfil/`, datos)
+      .pipe(tap((perfil) => this.perfil.set(perfil)));
+  }
+
   getPerfil() {
     return this.perfil.asReadonly();
   }

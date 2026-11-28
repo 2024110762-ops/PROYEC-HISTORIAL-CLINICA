@@ -69,7 +69,7 @@ export class PacientesComponent implements OnInit {
   });
 
   readonly formulario = this.constructorFormulario.nonNullable.group({
-    codigo_historia: ['', Validators.required],
+    codigo_historia: [''],
     nombres: ['', Validators.required],
     apellidos: ['', Validators.required],
     dni: ['', Validators.required],
@@ -188,7 +188,11 @@ export class PacientesComponent implements OnInit {
           ...lista.filter((item) => item.codigo_historia !== guardado.codigo_historia),
         ]);
         this.tabla?.reset();
-        this.mensajeria.add({ severity: 'success', summary: 'Operación Exitosa', detail: 'Paciente guardado.' });
+        this.mensajeria.add({
+          severity: 'success',
+          summary: 'Operación Exitosa',
+          detail: 'Paciente guardado.',
+        });
         this.GetPacientes();
       },
       error: (fallo: HttpErrorResponse) =>
@@ -202,12 +206,20 @@ export class PacientesComponent implements OnInit {
 
   EliminarPaciente(paciente: Paciente): void {
     if (!confirm(`¿Eliminar la historia de ${paciente.nombres} ${paciente.apellidos}?`)) {
-      this.mensajeria.add({ severity: 'info', summary: 'No se realizaron cambios', detail: 'Eliminación cancelada.' });
+      this.mensajeria.add({
+        severity: 'info',
+        summary: 'No se realizaron cambios',
+        detail: 'Eliminación cancelada.',
+      });
       return;
     }
     this.api.DeletePaciente(paciente.codigo_historia).subscribe({
       next: () => {
-        this.mensajeria.add({ severity: 'success', summary: 'Operación Exitosa', detail: 'Paciente eliminado.' });
+        this.mensajeria.add({
+          severity: 'success',
+          summary: 'Operación Exitosa',
+          detail: 'Paciente eliminado.',
+        });
         this.GetPacientes();
       },
       error: (fallo: HttpErrorResponse) =>

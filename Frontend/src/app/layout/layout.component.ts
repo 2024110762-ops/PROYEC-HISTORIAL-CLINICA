@@ -7,7 +7,7 @@ import { MessageModule } from 'primeng/message';
 import { Menu } from '../modelo';
 import { ApiService } from '../service/api.service';
 import { AuthService } from '../service/auth.service';
-import { MENU_BASE, ROLES_POR_RUTA } from '../service/menu';
+import { MENU_BASE, MENU_PERFIL, ROLES_POR_RUTA } from '../service/menu';
 import { SharedService } from '../service/shared.service';
 
 @Component({
@@ -67,6 +67,14 @@ import { SharedService } from '../service/shared.service';
       .hce-topbar .hce-espaciador {
         flex: 1;
       }
+      .hce-perfil-enlace {
+        color: #0f766e;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .hce-perfil-enlace:hover {
+        text-decoration: underline;
+      }
       .hce-contenido {
         padding: 1.5rem;
         overflow: auto;
@@ -93,10 +101,21 @@ export class LayoutComponent implements OnInit {
   readonly perfil = this.autenticacion.getPerfil();
   readonly menus = computed(() => {
     const rol = this.perfil()?.rol ?? '';
-    return this.api.menus().filter((item) => {
-      const permitidos = ROLES_POR_RUTA[item.ruta];
-      return !permitidos?.length || permitidos.includes(rol);
-    });
+    const items = this.api
+      .menus()
+      .map((item) => (item.ruta === MENU_PERFIL.ruta ? { ...item, orden: MENU_PERFIL.orden } : item));
+    if (!items.some((item) => item.ruta === MENU_PERFIL.ruta)) {
+      items.push(MENU_PERFIL);
+    }
+    return items
+      .filter((item) => {
+        if (item.ruta === MENU_PERFIL.ruta) {
+          return true;
+        }
+        const permitidos = ROLES_POR_RUTA[item.ruta];
+        return !permitidos?.length || permitidos.includes(rol);
+      })
+      .sort((a, b) => a.orden - b.orden || a.id - b.id);
   });
   readonly mensaje = signal(this.ruta.snapshot.queryParamMap.get('error') ?? '');
   readonly busquedaGlobal = signal(this.compartido.ObtenerBusqueda());

@@ -116,17 +116,31 @@ h3 {
   justify-content: center;
 }
 
-.hce-acciones-tabla .p-button {
+.hce-acciones-consultas {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.hce-acciones-consultas .hce-boton-finalizar {
+  margin-left: -0.35rem;
+  margin-right: auto;
+}
+
+.hce-tabla .p-datatable-thead > tr > th.hce-acciones-cabecera {
+  text-align: center;
+}
+
+.hce-acciones-tabla .p-button.p-button-icon-only {
   width: 2.25rem;
   height: 2.25rem;
 }
 
-.hce-acciones-tabla .p-button:not(.p-button-danger):hover {
+.hce-acciones-tabla .p-button.p-button-icon-only:not(.p-button-danger):hover {
   background: #ccfbf1;
   color: #0f766e;
 }
 
-.hce-acciones-tabla .p-button.p-button-danger:hover {
+.hce-acciones-tabla .p-button.p-button-icon-only.p-button-danger:hover {
   background: #fee2e2;
   color: #b91c1c;
 }

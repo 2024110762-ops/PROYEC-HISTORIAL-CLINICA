@@ -28,11 +28,19 @@
           <td>{{ NombrePaciente(receta.paciente) }}</td>
           <td>{{ receta.fecha_emision | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td><p-tag [value]="receta.estado" /></td>
-          <td><code>{{ receta.firma_digital.slice(0, 16) }}…</code></td>
+          <td>
+            <code>{{ receta.firma_digital.slice(0, 16) }}…</code>
+          </td>
           <td>
             <p-button icon="pi pi-eye" rounded text (onClick)="VerReceta(receta)" />
             @if (!soloLectura) {
-              <p-button icon="pi pi-trash" rounded text severity="danger" (onClick)="EliminarReceta(receta)" />
+              <p-button
+                icon="pi pi-trash"
+                rounded
+                text
+                severity="danger"
+                (onClick)="EliminarReceta(receta)"
+              />
             }
           </td>
         </tr>
@@ -102,6 +110,19 @@
           placeholder="Seleccione paciente"
         />
       </div>
+      @if (!esMedico) {
+        <div class="hce-campo">
+          <label>Médico</label>
+          <p-select
+            [ngModel]="cabecera().medico"
+            (ngModelChange)="cabecera.update((valor) => ({ ...valor, medico: $event }))"
+            [options]="medicos()"
+            optionLabel="nombres"
+            optionValue="id"
+            placeholder="Seleccione médico"
+          />
+        </div>
+      }
       <div class="hce-campo">
         <label>Diagnóstico</label>
         <input
@@ -134,9 +155,15 @@
           />
         </div>
         <div class="hce-campo"><label>Dosis</label><input pInputText [(ngModel)]="detalle.dosis" /></div>
-        <div class="hce-campo"><label>Frecuencia</label><input pInputText [(ngModel)]="detalle.frecuencia" /></div>
-        <div class="hce-campo"><label>Duración</label><input pInputText [(ngModel)]="detalle.duracion" /></div>
-        <div class="hce-campo"><label>Cantidad</label><input pInputText type="number" [(ngModel)]="detalle.cantidad" /></div>
+        <div class="hce-campo">
+          <label>Frecuencia</label><input pInputText [(ngModel)]="detalle.frecuencia" />
+        </div>
+        <div class="hce-campo">
+          <label>Duración</label><input pInputText [(ngModel)]="detalle.duracion" />
+        </div>
+        <div class="hce-campo">
+          <label>Cantidad</label><input pInputText type="number" [(ngModel)]="detalle.cantidad" />
+        </div>
         <p-button icon="pi pi-trash" severity="danger" rounded text (onClick)="QuitarDetalle($index)" />
       </div>
     }

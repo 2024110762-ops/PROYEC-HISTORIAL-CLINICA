@@ -7,11 +7,24 @@ export interface Menu {
 }
 
 export interface Perfil {
+  id: number | null;
   rol: string;
-  especialidad: string;
+  username: string;
   nombre: string;
+  nombres: string;
+  apellidos: string;
+  correo: string;
+  imagen: string;
+  especialidad: string;
   sede: string;
   codigo: string;
+  telefono: string;
+  direccion: string;
+  fecha_nacimiento: string | null;
+  sexo: string;
+  cmp: string;
+  estado: boolean;
+  permisos: string[];
 }
 
 export interface RespuestaLogin extends Perfil {

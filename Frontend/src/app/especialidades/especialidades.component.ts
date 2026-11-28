@@ -11,19 +11,30 @@ import { ToastModule } from 'primeng/toast';
 
 import { Especialidad } from '../modelo';
 import { ApiService, DetalleError as DetalleErrorComun } from '../service/api.service';
+import { AuthService } from '../service/auth.service';
 
 @Component({
   selector: 'app-especialidades',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ButtonModule, DialogModule, InputTextModule, TableModule, ToastModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    ButtonModule,
+    DialogModule,
+    InputTextModule,
+    TableModule,
+    ToastModule,
+  ],
   providers: [MessageService],
   templateUrl: './especialidades.component.html',
 })
 export class EspecialidadesComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly autenticacion = inject(AuthService);
   private readonly mensajeria = inject(MessageService);
   private readonly constructorFormulario = inject(FormBuilder);
 
+  readonly puedeGestionar = this.autenticacion.tieneRol('ADMIN');
   readonly especialidades = signal<Especialidad[]>([]);
   readonly dialogoVisible = signal(false);
   readonly especialidadEditando = signal<Especialidad | null>(null);
@@ -67,7 +78,11 @@ export class EspecialidadesComponent implements OnInit {
     operacion.subscribe({
       next: () => {
         this.dialogoVisible.set(false);
-        this.mensajeria.add({ severity: 'success', summary: 'Operación Exitosa', detail: 'Especialidad guardada.' });
+        this.mensajeria.add({
+          severity: 'success',
+          summary: 'Operación Exitosa',
+          detail: 'Especialidad guardada.',
+        });
         this.GetEspecialidades();
       },
       error: (fallo: HttpErrorResponse) =>
@@ -77,16 +92,28 @@ export class EspecialidadesComponent implements OnInit {
 
   EliminarEspecialidad(especialidad: Especialidad): void {
     if (!confirm(`¿Eliminar ${especialidad.nombre}?`)) {
-      this.mensajeria.add({ severity: 'info', summary: 'No se realizaron cambios', detail: 'Eliminación cancelada.' });
+      this.mensajeria.add({
+        severity: 'info',
+        summary: 'No se realizaron cambios',
+        detail: 'Eliminación cancelada.',
+      });
       return;
     }
     this.api.DeleteEspecialidad(especialidad.id).subscribe({
       next: () => {
-        this.mensajeria.add({ severity: 'success', summary: 'Operación Exitosa', detail: 'Especialidad eliminada.' });
+        this.mensajeria.add({
+          severity: 'success',
+          summary: 'Operación Exitosa',
+          detail: 'Especialidad eliminada.',
+        });
         this.GetEspecialidades();
       },
       error: (fallo: HttpErrorResponse) =>
-        this.mensajeria.add({ severity: 'error', summary: 'Error', detail: DetalleErrorComun(fallo, 'eliminar') }),
+        this.mensajeria.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: DetalleErrorComun(fallo, 'eliminar'),
+        }),
     });
   }
 }

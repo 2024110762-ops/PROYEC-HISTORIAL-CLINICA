@@ -6,7 +6,13 @@
       <p>Registro y consulta de historias clínicas.</p>
     </div>
     <div class="hce-acciones">
-      <p-button label="Actualizar" icon="pi pi-refresh" severity="secondary" [outlined]="true" (onClick)="Actualizar()" />
+      <p-button
+        label="Actualizar"
+        icon="pi pi-refresh"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="Actualizar()"
+      />
       <p-button label="Nuevo paciente" icon="pi pi-plus" (onClick)="AbrirNuevo()" />
     </div>
   </div>
@@ -25,7 +31,14 @@
       (input)="busqueda.set($any($event.target).value)"
     />
 
-    <p-table #tabla class="hce-tabla" [value]="pacientesFiltrados()" [paginator]="true" [rows]="5" [pageLinks]="5">
+    <p-table
+      #tabla
+      class="hce-tabla"
+      [value]="pacientesFiltrados()"
+      [paginator]="true"
+      [rows]="5"
+      [pageLinks]="5"
+    >
       <ng-template #header>
         <tr>
           <th>Código historia</th>
@@ -45,8 +58,23 @@
           <td>{{ paciente.telefono }}</td>
           <td>
             <div class="hce-acciones-tabla">
-              <p-button icon="pi pi-pencil" rounded text [attr.aria-label]="'Editar ' + paciente.nombres" [attr.title]="'Editar'" (onClick)="AbrirEditar(paciente)" />
-              <p-button icon="pi pi-trash" rounded text severity="danger" [attr.aria-label]="'Eliminar ' + paciente.nombres" [attr.title]="'Eliminar'" (onClick)="EliminarPaciente(paciente)" />
+              <p-button
+                icon="pi pi-pencil"
+                rounded
+                text
+                [attr.aria-label]="'Editar ' + paciente.nombres"
+                [attr.title]="'Editar'"
+                (onClick)="AbrirEditar(paciente)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                rounded
+                text
+                severity="danger"
+                [attr.aria-label]="'Eliminar ' + paciente.nombres"
+                [attr.title]="'Eliminar'"
+                (onClick)="EliminarPaciente(paciente)"
+              />
             </div>
           </td>
         </tr>
@@ -70,7 +98,13 @@
   <form [formGroup]="formulario" (ngSubmit)="GuardarPaciente()" class="hce-formulario">
     <div class="hce-campo">
       <label for="codigo_historia">Código de historia</label>
-      <input id="codigo_historia" pInputText formControlName="codigo_historia" />
+      <input
+        id="codigo_historia"
+        pInputText
+        formControlName="codigo_historia"
+        placeholder="Se genera automáticamente"
+        readonly
+      />
     </div>
     <div class="hce-campo">
       <label for="nombres">Nombres</label>

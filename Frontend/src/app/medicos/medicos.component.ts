@@ -12,6 +12,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { Especialidad, Medico } from '../modelo';
 import { ApiService, DetalleError as DetalleErrorComun } from '../service/api.service';
+import { AuthService } from '../service/auth.service';
 
 @Component({
   selector: 'app-medicos',
@@ -31,14 +32,15 @@ import { ApiService, DetalleError as DetalleErrorComun } from '../service/api.se
 })
 export class MedicosComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly autenticacion = inject(AuthService);
   private readonly mensajeria = inject(MessageService);
   private readonly constructorFormulario = inject(FormBuilder);
 
+  readonly puedeGestionar = this.autenticacion.tieneRol('ADMIN');
   readonly medicos = signal<Medico[]>([]);
   readonly especialidades = signal<Especialidad[]>([]);
   readonly dialogoVisible = signal(false);
   readonly medicoEditando = signal<Medico | null>(null);
-  private imagen: File | null = null;
 
   readonly formulario = this.constructorFormulario.nonNullable.group({
     codigo_medico: ['', Validators.required],
@@ -47,6 +49,8 @@ export class MedicosComponent implements OnInit {
     especialidad: [0, [Validators.required, Validators.min(1)]],
     cmp: ['', Validators.required],
     cuenta: [''],
+    username: [''],
+    password: [''],
   });
 
   ngOnInit(): void {
@@ -71,8 +75,9 @@ export class MedicosComponent implements OnInit {
       especialidad: this.especialidades()[0]?.id ?? 0,
       cmp: '',
       cuenta: '',
+      username: '',
+      password: '',
     });
-    this.imagen = null;
     this.dialogoVisible.set(true);
   }
 
@@ -85,13 +90,10 @@ export class MedicosComponent implements OnInit {
       especialidad: medico.especialidad,
       cmp: medico.cmp,
       cuenta: medico.cuenta != null ? String(medico.cuenta) : '',
+      username: '',
+      password: '',
     });
-    this.imagen = null;
     this.dialogoVisible.set(true);
-  }
-
-  SeleccionarImagen(evento: Event): void {
-    this.imagen = (evento.target as HTMLInputElement).files?.item(0) ?? null;
   }
 
   GuardarMedico(): void {
@@ -105,15 +107,16 @@ export class MedicosComponent implements OnInit {
         datos.append(clave, valor === '' ? '' : String(valor));
       }
     });
-    if (this.imagen) {
-      datos.append('imagen', this.imagen);
-    }
     const medico = this.medicoEditando();
     const operacion = medico ? this.api.PutMedico(medico.id, datos) : this.api.PostMedico(datos);
     operacion.subscribe({
       next: () => {
         this.dialogoVisible.set(false);
-        this.mensajeria.add({ severity: 'success', summary: 'Operación Exitosa', detail: 'Médico guardado.' });
+        this.mensajeria.add({
+          severity: 'success',
+          summary: 'Operación Exitosa',
+          detail: 'Médico guardado.',
+        });
         this.GetMedicos();
       },
       error: (fallo: HttpErrorResponse) =>
@@ -123,16 +126,28 @@ export class MedicosComponent implements OnInit {
 
   EliminarMedico(medico: Medico): void {
     if (!confirm(`¿Eliminar al médico ${medico.nombres}?`)) {
-      this.mensajeria.add({ severity: 'info', summary: 'No se realizaron cambios', detail: 'Eliminación cancelada.' });
+      this.mensajeria.add({
+        severity: 'info',
+        summary: 'No se realizaron cambios',
+        detail: 'Eliminación cancelada.',
+      });
       return;
     }
     this.api.DeleteMedico(medico.id).subscribe({
       next: () => {
-        this.mensajeria.add({ severity: 'success', summary: 'Operación Exitosa', detail: 'Médico eliminado.' });
+        this.mensajeria.add({
+          severity: 'success',
+          summary: 'Operación Exitosa',
+          detail: 'Médico eliminado.',
+        });
         this.GetMedicos();
       },
       error: (fallo: HttpErrorResponse) =>
-        this.mensajeria.add({ severity: 'error', summary: 'Error', detail: DetalleErrorComun(fallo, 'eliminar') }),
+        this.mensajeria.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: DetalleErrorComun(fallo, 'eliminar'),
+        }),
     });
   }
 }

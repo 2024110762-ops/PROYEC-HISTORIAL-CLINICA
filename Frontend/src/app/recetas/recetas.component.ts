@@ -12,7 +12,7 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import QRCode from 'qrcode';
 
-import { Consulta, DetalleReceta, Medicamento, Paciente, RecetaElectronica } from '../modelo';
+import { Consulta, DetalleReceta, Medicamento, Medico, Paciente, RecetaElectronica } from '../modelo';
 import { ApiService, DetalleError as DetalleErrorComun } from '../service/api.service';
 import { AuthService } from '../service/auth.service';
 
@@ -50,6 +50,7 @@ export class RecetasComponent implements OnInit {
   readonly medicamentos = signal<Medicamento[]>([]);
   readonly consultas = signal<Consulta[]>([]);
   readonly pacientes = signal<Paciente[]>([]);
+  readonly medicos = signal<Medico[]>([]);
   readonly dialogoVisible = signal(false);
   readonly recetaSeleccionada = signal<RecetaElectronica | null>(null);
   readonly codigoQR = signal('');
@@ -58,26 +59,35 @@ export class RecetasComponent implements OnInit {
   readonly cabecera = signal({
     consulta: 0,
     paciente: 0,
+    medico: 0,
     diagnostico: '',
     indicaciones: '',
   });
 
-  readonly puedeEmitir = this.autenticacion.tieneRol('MEDICO');
-  readonly soloLectura =
-    !this.autenticacion.tieneRol('MEDICO') && !this.autenticacion.tieneRol('ADMIN');
+  readonly esMedico = this.autenticacion.tieneRol('MEDICO');
+  readonly puedeEmitir = this.autenticacion.tieneRol('MEDICO', 'ADMIN');
+  readonly soloLectura = !this.puedeEmitir;
 
   ngOnInit(): void {
     this.GetRecetas();
     this.api.GetMedicamentos().subscribe({ next: (lista) => this.medicamentos.set(lista) });
     this.api.GetConsultas().subscribe({ next: (lista) => this.consultas.set(lista) });
     this.api.GetPacientes().subscribe({ next: (lista) => this.pacientes.set(lista) });
+    this.api.GetMedicos().subscribe({
+      next: (lista) => {
+        this.medicos.set(lista);
+        if (!this.esMedico && !this.cabecera().medico && lista.length) {
+          this.cabecera.update((valor) => ({ ...valor, medico: lista[0].id }));
+        }
+      },
+    });
   }
 
   GetRecetas(): void {
     this.api.GetRecetas().subscribe({ next: (lista) => this.recetas.set(lista) });
   }
 
- NombrePaciente(id: number): string {
+  NombrePaciente(id: number): string {
     const paciente = this.pacientes().find((elemento) => elemento.id === id);
     return paciente ? `${paciente.nombres} ${paciente.apellidos}` : `Paciente ${id}`;
   }
@@ -87,6 +97,7 @@ export class RecetasComponent implements OnInit {
     this.cabecera.set({
       consulta: this.consultas()[0]?.id ?? 0,
       paciente: this.pacientes()[0]?.id ?? 0,
+      medico: this.medicos()[0]?.id ?? 0,
       diagnostico: '',
       indicaciones: '',
     });
@@ -100,6 +111,7 @@ export class RecetasComponent implements OnInit {
     this.cabecera.set({
       consulta: receta.consulta,
       paciente: receta.paciente,
+      medico: receta.medico,
       diagnostico: receta.diagnostico,
       indicaciones: receta.indicaciones,
     });
@@ -138,13 +150,18 @@ export class RecetasComponent implements OnInit {
       return;
     }
     const cabecera = this.cabecera();
-    if (!cabecera.consulta || !cabecera.paciente) {
-      this.mensajeria.add({ severity: 'warn', summary: 'No se realizaron cambios', detail: 'Complete la cabecera.' });
+    if (!cabecera.consulta || !cabecera.paciente || (!this.esMedico && !cabecera.medico)) {
+      this.mensajeria.add({
+        severity: 'warn',
+        summary: 'No se realizaron cambios',
+        detail: 'Complete la cabecera.',
+      });
       return;
     }
     const datos: Partial<RecetaElectronica> = {
       consulta: cabecera.consulta,
       paciente: cabecera.paciente,
+      ...(this.esMedico ? {} : { medico: cabecera.medico }),
       diagnostico: cabecera.diagnostico,
       indicaciones: cabecera.indicaciones,
       detalles: this.detalles() as DetalleReceta[],
@@ -170,7 +187,11 @@ export class RecetasComponent implements OnInit {
 
   EliminarReceta(receta: RecetaElectronica): void {
     if (this.soloLectura || !confirm('¿Anular la receta seleccionada?')) {
-      this.mensajeria.add({ severity: 'info', summary: 'No se realizaron cambios', detail: 'Operación cancelada.' });
+      this.mensajeria.add({
+        severity: 'info',
+        summary: 'No se realizaron cambios',
+        detail: 'Operación cancelada.',
+      });
       return;
     }
     this.api.PostAnularReceta(receta.id).subscribe({
@@ -179,7 +200,11 @@ export class RecetasComponent implements OnInit {
         this.GetRecetas();
       },
       error: (fallo: HttpErrorResponse) =>
-        this.mensajeria.add({ severity: 'error', summary: 'Error', detail: DetalleErrorComun(fallo, 'anular la receta') }),
+        this.mensajeria.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: DetalleErrorComun(fallo, 'anular la receta'),
+        }),
     });
   }
 }

@@ -1,15 +1,20 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MessageService } from 'primeng/api';
 import { EMPTY, Observable, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 
 import { appRoutes } from './app.routes';
-import { Paciente } from './modelo';
+import { Especialidad, Medico, Paciente, Perfil } from './modelo';
+import { EspecialidadesComponent } from './especialidades/especialidades.component';
+import { MedicosComponent } from './medicos/medicos.component';
+import { PerfilComponent } from './perfil/perfil.component';
 import { PacientesComponent } from './pacientes/pacientes.component';
 import { ResultadosLaboratorioComponent } from './resultados-laboratorio/resultados-laboratorio.component';
 import { ApiService, DetalleError, UrlArchivo } from './service/api.service';
 import { AuthService } from './service/auth.service';
+import { MENU_BASE } from './service/menu';
 import { SharedService } from './service/shared.service';
 
 describe('Configuración de la aplicación', () => {
@@ -24,6 +29,11 @@ describe('Configuración de la aplicación', () => {
 
     const menu = sistema?.children?.find((ruta) => ruta.path === 'menu');
     expect(menu?.data?.['roles']).toEqual(['ADMIN']);
+
+    const perfil = sistema?.children?.find((ruta) => ruta.path === 'perfil');
+    expect(perfil?.title).toBe('Mi perfil · HCE');
+    expect(MENU_BASE[0].texto).toBe('Mi perfil');
+    expect(MENU_BASE[1].texto).toBe('Pacientes');
   });
 
   it('protege el módulo de auditoría por rol', () => {
@@ -185,7 +195,10 @@ describe('Pantalla de pacientes', () => {
 
 describe('Detalle de errores', () => {
   it('muestra el detail devuelto por el backend', () => {
-    const fallo = new HttpErrorResponse({ status: 400, error: { detail: 'La receta no tiene medicamentos.' } });
+    const fallo = new HttpErrorResponse({
+      status: 400,
+      error: { detail: 'La receta no tiene medicamentos.' },
+    });
     expect(DetalleError(fallo)).toBe('La receta no tiene medicamentos.');
   });
 
@@ -262,5 +275,207 @@ describe('Resultados de laboratorio', () => {
     expect(crear).toHaveBeenCalledOnce();
     expect(componente.formularioVisible()).toBe(false);
     expect(listar).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('Pantalla de médicos', () => {
+  const medico: Medico = {
+    id: 1,
+    codigo_medico: 'MED-001',
+    nombres: 'Ana',
+    apellidos: 'Ruiz',
+    especialidad: 1,
+    cmp: 'CMP-001',
+    imagen: null,
+    cuenta: null,
+  };
+
+  it('oculta las acciones de gestión para el rol médico', () => {
+    TestBed.configureTestingModule({
+      imports: [MedicosComponent],
+      providers: [
+        {
+          provide: ApiService,
+          useValue: {
+            GetMedicos: () => of([medico]),
+            GetEspecialidades: () => of([]),
+          },
+        },
+        { provide: AuthService, useValue: { tieneRol: () => false } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MedicosComponent);
+    fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Nuevo médico');
+    expect(fixture.nativeElement.querySelector('[aria-label="Editar"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Eliminar"]')).toBeNull();
+  });
+
+  it('envía usuario y contraseña al crear un médico', () => {
+    const crear = vi.fn((_datos: FormData) => of(medico));
+    TestBed.configureTestingModule({
+      imports: [MedicosComponent],
+      providers: [
+        {
+          provide: ApiService,
+          useValue: {
+            GetMedicos: () => of([]),
+            GetEspecialidades: () => of([{ id: 1, nombre: 'Cardiología', descripcion: '', activo: true }]),
+            PostMedico: crear,
+          },
+        },
+        { provide: AuthService, useValue: { tieneRol: () => true } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MedicosComponent);
+    const componente = fixture.componentInstance;
+    componente.ngOnInit();
+    componente.AbrirNuevo();
+    componente.formulario.patchValue({
+      codigo_medico: 'MED-002',
+      nombres: 'Luis',
+      apellidos: 'Pérez',
+      especialidad: 1,
+      cmp: 'CMP-002',
+      username: 'medico_nuevo',
+      password: 'ClaveSegura123!',
+    });
+
+    componente.GuardarMedico();
+
+    expect(crear).toHaveBeenCalledOnce();
+    const datos = crear.mock.calls[0][0] as FormData;
+    expect(datos.get('username')).toBe('medico_nuevo');
+    expect(datos.get('password')).toBe('ClaveSegura123!');
+  });
+});
+
+describe('Pantalla de especialidades', () => {
+  const especialidad: Especialidad = {
+    id: 1,
+    nombre: 'Cardiología',
+    descripcion: 'Especialidad cardiovascular',
+    activo: true,
+  };
+
+  it('oculta las acciones de gestión para el rol médico', () => {
+    TestBed.configureTestingModule({
+      imports: [EspecialidadesComponent],
+      providers: [
+        { provide: ApiService, useValue: { GetEspecialidades: () => of([especialidad]) } },
+        { provide: AuthService, useValue: { tieneRol: () => false } },
+      ],
+    });
+    const fixture = TestBed.createComponent(EspecialidadesComponent);
+    fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Nueva especialidad');
+    expect(fixture.nativeElement.querySelector('[aria-label="Editar"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Eliminar"]')).toBeNull();
+  });
+});
+
+describe('Pantalla de perfil', () => {
+  const perfilMedico: Perfil = {
+    id: 1,
+    rol: 'MEDICO',
+    username: 'medico_cardio',
+    nombre: 'Ana Ruiz',
+    nombres: 'Ana',
+    apellidos: 'Ruiz',
+    correo: 'ana@hce.test',
+    imagen: '',
+    especialidad: 'Cardiología',
+    sede: '',
+    codigo: 'MED-001',
+    telefono: '',
+    direccion: '',
+    fecha_nacimiento: null,
+    sexo: '',
+    cmp: 'CMP-001',
+    estado: true,
+    permisos: ['Emitir recetas electrónicas', 'Editar mi perfil'],
+  };
+
+  const perfilAdmin: Perfil = {
+    ...perfilMedico,
+    rol: 'ADMIN',
+    username: 'admin',
+    nombre: 'Root Admin',
+    nombres: 'Root',
+    apellidos: 'Admin',
+    especialidad: '',
+    cmp: '',
+    permisos: ['Consultar auditoría', 'Editar mi perfil'],
+  };
+
+  function configurar(datos: Perfil, actualizar: (valores: FormData) => Observable<Perfil>) {
+    TestBed.configureTestingModule({
+      imports: [PerfilComponent],
+      providers: [
+        {
+          provide: AuthService,
+          useValue: { getPerfil: () => signal(datos), ActualizarPerfil: actualizar },
+        },
+        MessageService,
+      ],
+    });
+    return TestBed.createComponent(PerfilComponent);
+  }
+
+  it('muestra el carnet del médico y permite cambiar la foto', () => {
+    const actualizar = vi.fn((_datos: FormData) => of(perfilMedico));
+    const fixture = configurar(perfilMedico, actualizar);
+    fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.hce-carnet')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.hce-identidad h1').textContent).toBe('Ana Ruiz');
+    expect(fixture.nativeElement.querySelector('.hce-identidad p').textContent).toBe('Cardiología');
+    expect(fixture.nativeElement.textContent).toContain('CMP-001');
+    expect(fixture.nativeElement.textContent).toContain('Cambiar foto de perfil');
+    expect(fixture.nativeElement.querySelector('.hce-carnet .hce-acciones')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.hce-carnet-columna > .hce-acciones')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.hce-qr')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Datos personales');
+    expect(fixture.nativeElement.textContent).not.toContain('Guardar cambios');
+    expect(fixture.nativeElement.textContent).not.toContain('Permisos según mi rol');
+    expect(fixture.nativeElement.querySelector('.hce-carnet-qr')).toBeNull();
+
+    const archivo = new File(['x'], 'foto.png', { type: 'image/png' });
+    fixture.componentInstance.CambiarFoto({
+      target: { files: { item: () => archivo }, value: '' },
+    } as unknown as Event);
+
+    expect(actualizar).toHaveBeenCalledOnce();
+    expect(actualizar.mock.calls[0][0].get('imagen')).toBe(archivo);
+  });
+
+  it('muestra los permisos de administrador', () => {
+    const fixture = configurar(perfilAdmin, (_datos: FormData) => of(perfilAdmin));
+    fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.hce-identidad h1').textContent).toBe('Root Admin');
+    expect(fixture.nativeElement.querySelector('.hce-identidad p').textContent).toBe('Administrador');
+    expect(fixture.nativeElement.textContent).toContain('Activo');
+  });
+
+  it('renderiza el perfil aunque el backend devuelva el formato anterior', () => {
+    const anterior = {
+      rol: 'MEDICO',
+      nombre: 'Ana Ruiz',
+      especialidad: 'Cardiología',
+    } as Perfil;
+    const fixture = configurar(anterior, (_datos: FormData) => of(anterior));
+    fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.hce-identidad h1').textContent).toBe('Ana Ruiz');
+    expect(fixture.nativeElement.querySelector('.hce-identidad p').textContent).toBe('Cardiología');
+    expect(fixture.nativeElement.querySelector('.hce-carnet')).not.toBeNull();
   });
 });
